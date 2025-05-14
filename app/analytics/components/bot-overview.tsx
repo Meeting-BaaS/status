@@ -1,11 +1,15 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockBotStatistics } from "@/lib/mock/bot-stats";
 import { formatNumber, formatPercentage } from "@/lib/utils";
 
-export function BotOverview() {
-    const { totalBots, successfulBots, errorBots } = mockBotStatistics;
+interface BotOverviewProps {
+    totalBots: number;
+    successfulBots: number;
+    errorBots: number;
+}
+
+export function BotOverview({ totalBots, successfulBots, errorBots }: BotOverviewProps) {
     const errorRate = (errorBots / totalBots) * 100;
     const successRate = (successfulBots / totalBots) * 100;
 

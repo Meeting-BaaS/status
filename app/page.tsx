@@ -1,26 +1,32 @@
 "use client";
 
-import { BotErrorAnalysis } from "@/app/analytics/components/bot-error-analysis";
-import { BotOverview } from "@/app/analytics/components/bot-overview";
-import { BotPerformanceChart } from "@/app/analytics/components/bot-performance-chart";
-import { BotPlatformDistribution } from "@/app/analytics/components/bot-platform-distribution";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockBotStatistics } from "@/lib/mock/bot-stats";
-import { formatNumber, formatPercentage } from "@/lib/utils";
+// NOTE: Make sure to install @tanstack/react-query if not already: pnpm add @tanstack/react-query
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBotStats } from "@/lib/api";
+import { BotOverview } from "./analytics/components/bot-overview";
+import { BotPerformanceChart } from "./analytics/components/bot-performance-chart";
+import { BotErrorAnalysis } from "./analytics/components/bot-error-analysis";
+import { BotPlatformDistribution } from "./analytics/components/bot-platform-distribution";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatNumber, formatPercentage } from "@/lib/utils";
 
-export default function Dashboard() {
+export default function AnalyticsPage() {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(30);
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month">("week");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["zoom", "google", "teams"]);
 
-  const {
-    totalBots,
-    successfulBots,
-    errorBots,
-    errorTypes,
-    platformDistribution,
-    dailyStats,
-  } = mockBotStatistics;
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["botStats", { offset: pageIndex * pageSize, limit: pageSize }],
+    queryFn: () => fetchBotStats({ offset: pageIndex * pageSize, limit: pageSize }),
+  });
+
+  if (isLoading) return <div>Loading…</div>;
+  if (isError) return <div>Error: {error instanceof Error ? error.message : "Unknown error"}</div>;
+
+  // Assume API returns { totalBots, successfulBots, errorBots, dailyStats, platformDistribution, errorTypes }
+  const { totalBots, successfulBots, errorBots, dailyStats, platformDistribution, errorTypes } = data;
 
   const errorRate = (errorBots / totalBots) * 100;
   const successRate = (successfulBots / totalBots) * 100;
@@ -85,7 +91,7 @@ export default function Dashboard() {
           <div className="border rounded-lg p-6 bg-card">
             <h2 className="text-lg font-semibold mb-4">Platform Filters</h2>
             <div className="space-y-3">
-              {platformDistribution.map((platform) => (
+              {platformDistribution.map((platform: { platform: string; count: number; percentage: number }) => (
                 <div
                   key={platform.platform}
                   className={`flex items-center justify-between p-3 rounded-md cursor-pointer border ${selectedPlatforms.includes(platform.platform.toLowerCase())
@@ -116,7 +122,7 @@ export default function Dashboard() {
 
         {/* Overview stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <BotOverview />
+          <BotOverview totalBots={totalBots} successfulBots={successfulBots} errorBots={errorBots} />
         </div>
       </div>
 

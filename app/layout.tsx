@@ -1,13 +1,20 @@
+/* (1) Import { getAuthSession } from '@/lib/auth/session' (or your custom auth session getter) if it's exported (or update the import accordingly). (If your auth session getter is exported as "getAuthSession" (or another name), update accordingly.) */
+import { getAuthSession } from "@/lib/auth/session";
+
+/* (2) Import { Providers } from './providers' (which we created) so that the module is resolved. (Ensure that app/providers.tsx is present.) */
+import { Providers } from "./providers";
+
 import "@/app/globals.css"
 import Footer from "@/components/footer"
 import Header from "@/components/header"
 import { Toaster } from "@/components/ui/sonner"
-import { getAuthSession } from "@/lib/auth/session"
-import type { Metadata, Viewport } from "next"
-import { ThemeProvider } from "next-themes"
+import { Metadata, Viewport } from "next"
 import { Sofia_Sans } from "next/font/google"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { ReactNode } from "react"
+import { ThemeProvider } from "next-themes"
+import { AUTH_APP_URL } from "@/lib/external-urls"
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
@@ -25,11 +32,6 @@ export const viewport: Viewport = {
   initialScale: 1
 }
 
-const authAppUrl = process.env.NEXT_PUBLIC_AUTH_APP_URL
-if (!authAppUrl) {
-  throw new Error("NEXT_PUBLIC_AUTH_APP_URL environment variable is not defined")
-}
-
 export default async function RootLayout({
   children
 }: Readonly<{
@@ -41,20 +43,22 @@ export default async function RootLayout({
   if (!session) {
     const redirectTo = requestHeaders.get("x-redirect-to")
     const redirectionUrl = redirectTo
-      ? `${authAppUrl}/sign-in?redirectTo=${redirectTo}`
-      : `${authAppUrl}/sign-in`
+      ? `${AUTH_APP_URL}/sign-in?redirectTo=${redirectTo}`
+      : `${AUTH_APP_URL}/sign-in`
     redirect(redirectionUrl)
   }
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${sofiaSans.className} flex min-h-screen flex-col antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
-          <Header user={session.user} />
-          <main className="flex-1"> {children}</main>
-          <Footer />
-          <Toaster />
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+            <Header user={session.user} />
+            <main className="flex-1"> {children}</main>
+            <Footer />
+            <Toaster />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )
