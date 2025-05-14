@@ -58,6 +58,16 @@
   --baas-neutral-500: oklch(0.35 0.0121 188.07);
   --baas-warning-500: oklch(0.98 0.1298 108.58);
   --baas-black: oklch(0.26 0 0);
+
+  /* Chart colors */
+  --chart-1: 192 80% 60%; /* Blue for Google Meet */
+  --chart-2: 327 73% 52%; /* Purple for Zoom */
+  --chart-3: 162 63% 41%; /* Teal for Teams */
+  --chart-4: 43 96% 58%; /* Yellow */
+  --chart-5: 0 91% 63%; /* Red */
+
+  /* Success and error colors */
+  --success: 142 76% 36%;
 }
 
 .dark {
@@ -75,6 +85,16 @@
   --border: var(--baas-neutral-500);
   --input: var(--baas-neutral-500);
   --ring: oklch(0.67 0.143484 235.7191);
+
+  /* Chart colors for dark mode */
+  --chart-1: 195 85% 50%; /* Blue for Google Meet */
+  --chart-2: 327 100% 70%; /* Purple for Zoom */
+  --chart-3: 162 70% 45%; /* Teal for Teams */
+  --chart-4: 43 100% 65%; /* Yellow */
+  --chart-5: 0 95% 65%; /* Red */
+
+  /* Success and error colors */
+  --success: 142 76% 45%;
 }
 
 @layer base {

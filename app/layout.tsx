@@ -1,13 +1,13 @@
-import type { Metadata, Viewport } from "next"
-import { Sofia_Sans } from "next/font/google"
-import { Toaster } from "@/components/ui/sonner"
-import { ThemeProvider } from "next-themes"
 import "@/app/globals.css"
-import { headers } from "next/headers"
-import { getAuthSession } from "@/lib/auth/session"
-import { redirect } from "next/navigation"
-import Header from "@/components/header"
 import Footer from "@/components/footer"
+import Header from "@/components/header"
+import { Toaster } from "@/components/ui/sonner"
+import { getAuthSession } from "@/lib/auth/session"
+import type { Metadata, Viewport } from "next"
+import { ThemeProvider } from "next-themes"
+import { Sofia_Sans } from "next/font/google"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
 const sofiaSans = Sofia_Sans({
   subsets: ["latin"],
@@ -16,8 +16,8 @@ const sofiaSans = Sofia_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Settings | Meeting BaaS",
-  description: "Access your Meeting BaaS settings"
+  title: "Analytics | Meeting BaaS",
+  description: "Meeting BaaS analytics dashboard for monitoring bot performance"
 }
 
 export const viewport: Viewport = {
