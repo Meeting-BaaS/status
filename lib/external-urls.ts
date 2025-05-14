@@ -2,11 +2,8 @@
 // It would be empty for prod.
 const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || ""
 
-// Auth App
-export const AUTH_APP_URL = `https://auth.${environment}meetingbaas.com`
-
 // Chat App
-export const AI_CHAT_URL = process.env.AI_CHAT_APP_URL || `https://chat.${environment}meetingbaas.com`
+export const AI_CHAT_URL = `https://chat.${environment}meetingbaas.com`
 
 // Meeting BaaS home page
 export const MEETING_BAAS_HOMEPAGE_URL = "https://meetingbaas.com"
@@ -25,7 +22,7 @@ export const CONSUMPTION_URL = `${SETTINGS_URL}/usage`
 export const BILLING_URL = `${SETTINGS_URL}/billing`
 
 // Github
-export const GITHUB_REPO_URL = "https://github.com/Meeting-Baas/logs-table"
+export const GITHUB_REPO_URL = "https://github.com/Meeting-Baas/analytics"
 
 // Recording Viewer. Append uuid to the end of the URL to view a specific recording.
 export const RECORDING_VIEWER_URL = `https://${environment}meetingbaas.com/viewer/:uuid`
