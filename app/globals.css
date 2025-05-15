@@ -37,8 +37,8 @@
   --foreground: oklch(0.36 0.0131 285.72);
   --card: var(--background);
   --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover: var(--background);
+  --popover-foreground:  var(--foreground);
   --primary: oklch(0.8 0.140647 186.3213);
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.97 0.0013 286.38);
@@ -47,7 +47,7 @@
   --muted-foreground: var(--secondary-foreground);
   --accent: var(--secondary);
   --accent-foreground: var(--secondary-foreground);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.64 0.2465 18.31);
   --border: oklch(0.92 0.004 286.32);
   --input: var(--border);
   --ring: var(--border);
@@ -57,6 +57,7 @@
   --baas-neutral-400: oklch(0.46 0 0);
   --baas-neutral-500: oklch(0.35 0.0121 188.07);
   --baas-warning-500: oklch(0.98 0.1298 108.58);
+  --baas-primary-700: oklch(0.53 0.0548 187.47);
   --baas-black: oklch(0.26 0 0);
 
   /* Chart colors */
@@ -73,15 +74,15 @@
 .dark {
   --background: oklch(0.29 0 0);
   --foreground: oklch(1 0 0);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
+  --popover: var(--baas-black);
   --primary-foreground: oklch(0.38 0.0245 253.58);
+  --secondary: var(--baas-neutral-500);
   --secondary-foreground: var(--foreground);
   --muted: var(--baas-neutral-500);
   --muted-foreground: oklch(0.72 0 0);
   --accent: var(--baas-neutral-500);
   --accent-foreground: var(--foreground);
-  --destructive: var(--baas-warning-500);
+  --destructive: oklch(0.64 0.2465 18.31);
   --border: var(--baas-neutral-500);
   --input: var(--baas-neutral-500);
   --ring: oklch(0.67 0.143484 235.7191);
@@ -103,13 +104,13 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply !bg-background !text-foreground;
   }
 
   /* Selection styling */
   ::selection {
-    background-color: hsl(var(--accent));
-    color: hsl(var(--foreground));
+    background-color: var(--accent);
+    color: var(--foreground);
   }
 }
 
