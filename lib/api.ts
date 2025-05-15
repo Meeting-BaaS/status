@@ -18,6 +18,10 @@ export interface FetchLogsParams {
   status?: string[]
 }
 
+/**
+ * Fetches paginated bot stats from the API.
+ * Returns { bots: BotData[], has_more: boolean }
+ */
 export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginated> {
   const queryParams = new URLSearchParams()
 

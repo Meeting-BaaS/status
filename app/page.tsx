@@ -25,11 +25,19 @@ export default function AnalyticsPage() {
   if (isLoading) return <div>Loading…</div>;
   if (isError) return <div>Error: {error instanceof Error ? error.message : "Unknown error"}</div>;
 
-  // Assume API returns { totalBots, successfulBots, errorBots, dailyStats, platformDistribution, errorTypes }
-  const { totalBots, successfulBots, errorBots, dailyStats, platformDistribution, errorTypes } = data;
+  // API returns { bots: BotData[], has_more: boolean }
+  const bots = data?.bots ?? [];
+  const totalBots = bots.length;
+  const successfulBots = bots.filter(bot => bot.status.type.toLowerCase() === "success").length;
+  const errorBots = bots.filter(bot => bot.status.type.toLowerCase() === "error").length;
 
-  const errorRate = (errorBots / totalBots) * 100;
-  const successRate = (successfulBots / totalBots) * 100;
+  // TODO: Compute these from bots if needed
+  const dailyStats: any[] = [];
+  const platformDistribution: any[] = [];
+  const errorTypes: any[] = [];
+
+  const errorRate = totalBots > 0 ? (errorBots / totalBots) * 100 : 0;
+  const successRate = totalBots > 0 ? (successfulBots / totalBots) * 100 : 0;
 
   // Toggle platform selection
   const togglePlatform = (platform: string) => {
