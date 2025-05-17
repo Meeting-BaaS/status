@@ -1,22 +1,25 @@
+export type PlatformName = "zoom" | "teams" | "google meet" | "unknown"
+export type StatusType = "success" | "error" | "pending" | "warning"
+export type UserReportedErrorStatus = "open" | "closed" | "in_progress"
+
 export type UserReportedErrorMessage = {
   created_at: string
   author: string
   note: string
+  chat_id?: string
 }
 
 export type UserReportedError = {
-  status: "open" | "closed" | "in progress"
+  status: UserReportedErrorStatus
   messages: UserReportedErrorMessage[]
 }
 
-export type BotStatusResponse = {
-  category: string
-  color: string
-  details: string | null
-  icon: string
-  sort_priority: number
-  type: string
+export type Status = {
   value: string
+  type: StatusType
+  details?: string | null
+  sort_priority: number
+  category: string
 }
 
 export type BotData = {
@@ -56,10 +59,41 @@ export type BotData = {
     zoom_sdk_pwd: string | null
   }
   duration: number
-  status: BotStatusResponse
+  status: Status
 }
 
 export type BotPaginated = {
   has_more: boolean
   bots: BotData[]
+}
+
+export type FormattedBotData = BotData & {
+  platform: PlatformName
+}
+
+export type FilterState = {
+  platformFilters: string[]
+  statusFilters: string[]
+  userReportedErrorStatusFilters: string[]
+}
+
+export type PlatformDistribution = {
+  platform: string
+  count: number
+  percentage: number
+}
+
+export type DailyStats = {
+  date: string
+  totalBots: number
+  errorBots: number
+  platforms: {
+    [key: string]: number
+  }
+}
+
+export type ErrorType = {
+  type: string
+  count: number
+  percentage: number
 }
