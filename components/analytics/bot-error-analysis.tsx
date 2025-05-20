@@ -10,15 +10,18 @@ import {
   type ChartConfig
 } from "@/components/ui/chart"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ErrorCategory, ErrorCategoryDistribution, ErrorType, UserReportedErrorDistribution } from "@/lib/types"
+import { useSelectedBots } from "@/contexts/selected-bots-context"
+import { chartColors } from "@/lib/chart-colors"
+import type { ErrorCategory, ErrorCategoryDistribution, ErrorType, FormattedBotData, UserReportedErrorDistribution } from "@/lib/types"
 import { formatNumber, formatPercentage } from "@/lib/utils"
-import { SortAsc, SortDesc } from "lucide-react"
+import { Check, ExternalLink, SortAsc, SortDesc } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 
 interface BotErrorAnalysisProps {
   errorTypes: ErrorType[]
   userReportedErrors?: UserReportedErrorDistribution[]
+  errorBots?: FormattedBotData[]
 }
 
 // Map error categories to more readable names
@@ -40,14 +43,15 @@ const categoryLabels: Record<ErrorCategory, string> = {
 
 // Map priority levels to colors and labels
 const priorityColors: Record<string, string> = {
-  "critical": "hsl(var(--destructive))",
-  "high": "hsl(var(--destructive)/0.8)",
-  "medium": "hsl(var(--warning))",
-  "low": "hsl(var(--warning)/0.7)",
-  "none": "hsl(var(--muted)/0.5)"
+  "critical": "#FE1B4E",    // Error 500
+  "high": "#FE809C",        // Error 300
+  "medium": "#FFFF93",      // Warning 500
+  "low": "#78FFF0",         // Primary 500
+  "none": "#5A5A5A"         // Neutral 400
 }
 
-export function BotErrorAnalysis({ errorTypes, userReportedErrors = [] }: BotErrorAnalysisProps) {
+export function BotErrorAnalysis({ errorTypes, userReportedErrors = [], errorBots = [] }: BotErrorAnalysisProps) {
+  const { selectedBots, toggleBotSelection, isSelected, generateLogsUrl } = useSelectedBots()
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [selectedError, setSelectedError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<ErrorCategory | null>(null)
@@ -134,14 +138,15 @@ export function BotErrorAnalysis({ errorTypes, userReportedErrors = [] }: BotErr
         return Object.assign(acc, {
           [key]: {
             label: error.type,
-            color: error.priority ? priorityColors[error.priority] : `hsl(var(--chart-${(index % 10) + 1}))`
+            color: error.priority ? priorityColors[error.priority] :
+              chartColors[`chart${(index % 10) + 1}` as keyof typeof chartColors]
           }
         })
       }, {} as ChartConfig
     )
   }, [errorTypes])
 
-  // Create category chart config
+  // Create category chart config with marine/teal colors
   const categoryChartConfig = useMemo(() => {
     return errorsByCategory.reduce(
       (acc, cat, index) => {
@@ -149,7 +154,7 @@ export function BotErrorAnalysis({ errorTypes, userReportedErrors = [] }: BotErr
         return Object.assign(acc, {
           [key]: {
             label: categoryLabels[cat.category] || cat.category,
-            color: `hsl(var(--chart-${(index % 10) + 1}))`
+            color: chartColors[`chart${(index % 10) + 1}` as keyof typeof chartColors]
           }
         })
       }, {} as ChartConfig
@@ -206,20 +211,20 @@ export function BotErrorAnalysis({ errorTypes, userReportedErrors = [] }: BotErr
     percentage: status.percentage
   }))
 
-  // Create user error chart config
+  // Create user error chart config with marine/teal theme
   const userChartConfig = useMemo(() => {
     return {
       open: {
         label: "Open",
-        color: "hsl(var(--destructive))"
+        color: chartColors.error
       },
       in_progress: {
         label: "In Progress",
-        color: "hsl(var(--warning))"
+        color: chartColors.warning
       },
       closed: {
         label: "Closed",
-        color: "hsl(var(--success))"
+        color: chartColors.chart1
       }
     } as ChartConfig
   }, [])
@@ -295,39 +300,177 @@ export function BotErrorAnalysis({ errorTypes, userReportedErrors = [] }: BotErr
     return "Total Errors"
   }
 
+  // Function to handle clicking on an error type to select all matching bots
+  const selectBotsWithErrorType = (errorType: string) => {
+    const matchingBots = errorBots.filter(bot => bot.status.value === errorType)
+    matchingBots.forEach(bot => {
+      toggleBotSelection(bot, true)
+    })
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <h3 className="text-lg font-medium">Error Distribution</h3>
-          <p className="text-muted-foreground text-sm">
-            Showing {formatNumber(totalErrors)} errors across {errorTypes.length} categories
-          </p>
+          <h3 className="mb-2 text-lg font-medium">Error Distribution</h3>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="text-muted-foreground text-sm">
+                      Showing {formatNumber(totalErrors)} errors across {errorTypes.length} categories
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {(selectedError || selectedCategory || selectedPriority) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedError(null)
+                          setSelectedCategory(null)
+                          setSelectedPriority(null)
+                        }}
+                        className="text-xs"
+                      >
+                        Clear Filter
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleSort}
+                      className="gap-1 text-xs"
+                    >
+                      Sort {sortOrder === "desc" ? <SortDesc className="h-3 w-3" /> : <SortAsc className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="h-80">
+                  <ChartContainer config={chartConfig}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={
+                            selectedError
+                              ? chartData.filter(d => d.label === selectedError)
+                              : chartData
+                          }
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={70}
+                          outerRadius={100}
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                          labelLine={false}
+                        >
+                          {chartData.map((entry) => (
+                            <Cell
+                              key={entry.name}
+                              fill={`var(--color-${entry.name})`}
+                              opacity={selectedError && selectedError !== entry.label ? 0.3 : 1}
+                            />
+                          ))}
+                        </Pie>
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value: unknown) => formatNumber(Number(value))}
+                            />
+                          }
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="font-bold text-4xl">
+                        {formatNumber(selectedError
+                          ? errorTypes.find(e => e.type === selectedError)?.count || 0
+                          : totalErrors
+                        )}
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        {selectedError || "Total Errors"}
+                      </span>
+                    </div>
+                  </ChartContainer>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {(selectedError || selectedCategory || selectedPriority) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSelectedError(null)
-                setSelectedCategory(null)
-                setSelectedPriority(null)
-              }}
-              className="text-xs"
-            >
-              Clear Filter
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleSort}
-            className="gap-1 text-xs"
-          >
-            Sort {sortOrder === "desc" ? <SortDesc className="h-3 w-3" /> : <SortAsc className="h-3 w-3" />}
-          </Button>
+        <div>
+          <h3 className="mb-2 text-lg font-medium">Error Types</h3>
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {sortedErrorTypes.slice(0, 5).map((error) => {
+                  const matchingBots = errorBots.filter(bot => bot.status.value === error.type)
+                  const allSelected = matchingBots.length > 0 && matchingBots.every(bot => isSelected(bot.uuid))
+
+                  return (
+                    <div
+                      key={error.type}
+                      className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="truncate font-medium">{error.type}</span>
+                          <Badge variant="outline">{error.category}</Badge>
+                          {error.priority && (
+                            <Badge
+                              className="capitalize"
+                              style={{
+                                backgroundColor: `${priorityColors[error.priority]}20`,
+                                color: priorityColors[error.priority],
+                                borderColor: priorityColors[error.priority]
+                              }}
+                            >
+                              {error.priority}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <span className="text-2xl font-semibold">{error.count}</span>
+                          <div className="text-xs text-muted-foreground">
+                            {formatPercentage(error.percentage)}
+                          </div>
+                        </div>
+                        {matchingBots.length > 0 && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className={allSelected ? "bg-primary/10" : ""}
+                              onClick={() => selectBotsWithErrorType(error.type)}
+                            >
+                              <Check className={`h-4 w-4 ${allSelected ? "text-primary" : "text-muted-foreground"}`} />
+                            </Button>
+                            {allSelected && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => window.open(generateLogsUrl(null, null), '_blank')}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

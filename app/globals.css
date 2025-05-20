@@ -68,15 +68,52 @@
   --baas-primary-700: oklch(0.53 0.0548 187.47);
   --baas-black: oklch(0.26 0 0);
 
-  /* Chart colors */
-  --chart-1: 192 80% 60%; /* Blue for Google Meet */
-  --chart-2: 327 73% 52%; /* Purple for Zoom */
-  --chart-3: 162 63% 41%; /* Teal for Teams */
-  --chart-4: 43 96% 58%; /* Yellow */
-  --chart-5: 0 91% 63%; /* Red */
+  /* Chart colors - Marine/Teal palette */
+  --chart-1: #78FFF0; /* Primary teal */
+  --chart-2: #6AEDDF; /* Teal variation 1 */
+  --chart-3: #5CDBCF; /* Teal variation 2 */
+  --chart-4: #4EC9BF; /* Teal variation 3 */
+  --chart-5: #40B7AF; /* Teal variation 4 */
+  --chart-6: #32A59F; /* Teal variation 5 */
+  --chart-7: #24938F; /* Teal variation 6 */
+  --chart-8: #16817F; /* Teal variation 7 */
+  --chart-9: #086F6F; /* Teal variation 8 */
+  --chart-10: #447671; /* Primary dark teal */
 
   /* Success and error colors */
-  --success: 142 76% 36%;
+  --success: #78FFF0; /* Primary teal */
+  --warning: #FFFF93; /* Warning yellow */
+  --error: #FE1B4E; /* Error red */
+  
+  /* Marine/Teal Palette variables for use in JS */
+  --color-chart-1: #78FFF0;
+  --color-chart-2: #6AEDDF;
+  --color-chart-3: #5CDBCF;
+  --color-chart-4: #4EC9BF;
+  --color-chart-5: #40B7AF;
+  --color-chart-6: #32A59F;
+  --color-chart-7: #24938F;
+  --color-chart-8: #16817F;
+  --color-chart-9: #086F6F;
+  --color-chart-10: #447671;
+  
+  /* Status colors */
+  --color-success: #78FFF0;
+  --color-warning: #FFFF93;
+  --color-error: #FE1B4E;
+  --color-error-mid: #FE809C;
+  
+  /* Apply to chart colors */
+  --chart-color-1: var(--color-chart-1);
+  --chart-color-2: var(--color-chart-2);
+  --chart-color-3: var(--color-chart-3);
+  --chart-color-4: var(--color-chart-4);
+  --chart-color-5: var(--color-chart-5);
+  --chart-color-6: var(--color-chart-6);
+  --chart-color-7: var(--color-chart-7);
+  --chart-color-8: var(--color-chart-8);
+  --chart-color-9: var(--color-chart-9);
+  --chart-color-10: var(--color-chart-10);
 }
 
 .dark {
@@ -95,15 +132,22 @@
   --input: var(--baas-neutral-500);
   --ring: oklch(0.67 0.143484 235.7191);
 
-  /* Chart colors for dark mode */
-  --chart-1: 195 85% 50%; /* Blue for Google Meet */
-  --chart-2: 327 100% 70%; /* Purple for Zoom */
-  --chart-3: 162 70% 45%; /* Teal for Teams */
-  --chart-4: 43 100% 65%; /* Yellow */
-  --chart-5: 0 95% 65%; /* Red */
+  /* Chart colors - Marine/Teal palette for dark mode */
+  --chart-1: #78FFF0; /* Primary teal */
+  --chart-2: #6AEDDF; /* Teal variation 1 */
+  --chart-3: #5CDBCF; /* Teal variation 2 */
+  --chart-4: #4EC9BF; /* Teal variation 3 */
+  --chart-5: #40B7AF; /* Teal variation 4 */
+  --chart-6: #32A59F; /* Teal variation 5 */
+  --chart-7: #24938F; /* Teal variation 6 */
+  --chart-8: #16817F; /* Teal variation 7 */
+  --chart-9: #086F6F; /* Teal variation 8 */
+  --chart-10: #447671; /* Primary dark teal */
 
   /* Success and error colors */
-  --success: 142 76% 45%;
+  --success: #78FFF0; /* Primary teal */
+  --warning: #FFFF93; /* Warning yellow */
+  --error: #FE1B4E; /* Error red */
 }
 
 @layer base {

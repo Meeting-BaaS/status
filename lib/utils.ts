@@ -99,8 +99,9 @@ export function getChartColorVars(config: Record<string, { color: string }>) {
   }, {})
 }
 
-// Status colors
+// Status colors using CSS variables for consistency
 export const statusColors = {
-  success: "hsl(var(--success))",
-  error: "hsl(var(--destructive))"
+  success: "var(--color-success, #78FFF0)", // Primary teal
+  error: "var(--color-error, #FE1B4E)",     // Error red
+  warning: "var(--color-warning, #FFFF93)"  // Warning yellow
 }
