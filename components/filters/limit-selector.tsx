@@ -30,6 +30,14 @@ export const limitOptions = [
   {
     label: "Last 500 bots",
     value: 500
+  },
+  {
+    label: "Last 1000 bots",
+    value: 1000
+  },
+  {
+    label: "Last 2000 bots",
+    value: 2000
   }
 ]
 
@@ -63,9 +71,13 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
       <SelectTrigger className="w-full">
         <SelectValue placeholder="Limit" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="py-2">
         {limitOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value.toString()}>
+          <SelectItem
+            key={option.value}
+            value={option.value.toString()}
+            className="px-4 py-2.5 rounded-md"
+          >
             {option.label}
           </SelectItem>
         ))}

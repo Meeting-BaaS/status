@@ -353,22 +353,35 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[250px] flex items-center justify-center">
+                                    <CardContent className="h-[300px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
+                                                    <Legend
+                                                        layout="horizontal"
+                                                        verticalAlign="bottom"
+                                                        align="center"
+                                                        wrapperStyle={{
+                                                            paddingTop: '10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 500
+                                                        }}
+                                                        formatter={(value, entry) => {
+                                                            return <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>{value}</span>;
+                                                        }}
+                                                    />
                                                     <Pie
                                                         data={data.platformDistribution.map((platform, idx) => ({
-                                                            name: platform.platform,
+                                                            name: platform.platform.charAt(0).toUpperCase() + platform.platform.slice(1),
                                                             value: platform.count,
                                                             color: chartColors[`chart${(idx % 10) + 1}` as keyof typeof chartColors],
                                                             platform: platform.platform,
                                                             percentage: platform.percentage
                                                         }))}
                                                         cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={80}
+                                                        cy="45%"
+                                                        innerRadius={55}
+                                                        outerRadius={75}
                                                         paddingAngle={4}
                                                         dataKey="value"
                                                         stroke="#1e1e22"
@@ -442,9 +455,9 @@ export function CompactDashboard() {
 
                                                                     // Custom JSX for tooltip content
                                                                     displayValue = (
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium">{formatNumber(numValue)} bots</span>
-                                                                            <span className="text-xs opacity-75">{percentage.toFixed(1)}% of total</span>
+                                                                        <div className="flex flex-col text-white">
+                                                                            <span className="font-medium text-white">{formatNumber(numValue)} bots</span>
+                                                                            <span className="text-xs text-white opacity-90">{percentage.toFixed(1)}% of total</span>
                                                                         </div>
                                                                     );
                                                                 } else {
@@ -457,15 +470,16 @@ export function CompactDashboard() {
                                                             return [displayValue, displayName];
                                                         }}
                                                         contentStyle={{
-                                                            backgroundColor: 'var(--background)',
-                                                            borderColor: 'var(--border)',
+                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                                                            color: 'white',
                                                             borderRadius: '8px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
                                                             zIndex: 50
                                                         }}
-                                                        wrapperStyle={{
-                                                            zIndex: 50
+                                                        itemStyle={{
+                                                            color: 'white'
                                                         }}
                                                     />
                                                 </PieChart>
@@ -485,13 +499,26 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[250px] flex items-center justify-center">
+                                    <CardContent className="h-[300px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
+                                                    <Legend
+                                                        layout="horizontal"
+                                                        verticalAlign="bottom"
+                                                        align="center"
+                                                        wrapperStyle={{
+                                                            paddingTop: '10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 500
+                                                        }}
+                                                        formatter={(value, entry) => {
+                                                            return <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>{value}</span>;
+                                                        }}
+                                                    />
                                                     <Pie
                                                         data={data.errorTypes.slice(0, 5).map((error, idx) => ({
-                                                            name: error.type,
+                                                            name: error.type.replace(/([A-Z])/g, ' $1').trim(),
                                                             value: error.count,
                                                             color: chartColors[`chart${(idx % 10) + 1}` as keyof typeof chartColors],
                                                             errorType: error.type,
@@ -499,9 +526,9 @@ export function CompactDashboard() {
                                                             priority: error.priority
                                                         }))}
                                                         cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={80}
+                                                        cy="45%"
+                                                        innerRadius={55}
+                                                        outerRadius={75}
                                                         paddingAngle={4}
                                                         dataKey="value"
                                                         stroke="#1e1e22"
@@ -575,11 +602,11 @@ export function CompactDashboard() {
 
                                                                     // Custom JSX for tooltip content
                                                                     displayValue = (
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium">{formatNumber(numValue)} bots</span>
-                                                                            <span className="text-xs opacity-75">{percentage.toFixed(1)}% of errors</span>
-                                                                            {props.payload.category && <span className="text-xs">Category: {props.payload.category}</span>}
-                                                                            {props.payload.priority && <span className="text-xs">Priority: {props.payload.priority}</span>}
+                                                                        <div className="flex flex-col text-white">
+                                                                            <span className="font-medium text-white">{formatNumber(numValue)} bots</span>
+                                                                            <span className="text-xs text-white opacity-90">{percentage.toFixed(1)}% of errors</span>
+                                                                            {props.payload.category && <span className="text-xs text-white opacity-90">Category: {props.payload.category}</span>}
+                                                                            {props.payload.priority && <span className="text-xs text-white opacity-90">Priority: {props.payload.priority}</span>}
                                                                         </div>
                                                                     );
                                                                 } else {
@@ -592,15 +619,16 @@ export function CompactDashboard() {
                                                             return [displayValue, displayName];
                                                         }}
                                                         contentStyle={{
-                                                            backgroundColor: 'var(--background)',
-                                                            borderColor: 'var(--border)',
+                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                                                            color: 'white',
                                                             borderRadius: '8px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
                                                             zIndex: 50
                                                         }}
-                                                        wrapperStyle={{
-                                                            zIndex: 50
+                                                        itemStyle={{
+                                                            color: 'white'
                                                         }}
                                                     />
                                                 </PieChart>
@@ -624,10 +652,23 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[250px] flex items-center justify-center">
+                                    <CardContent className="h-[300px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
+                                                    <Legend
+                                                        layout="horizontal"
+                                                        verticalAlign="bottom"
+                                                        align="center"
+                                                        wrapperStyle={{
+                                                            paddingTop: '10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 500
+                                                        }}
+                                                        formatter={(value, entry) => {
+                                                            return <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>{value}</span>;
+                                                        }}
+                                                    />
                                                     {(() => {
                                                         // Prepare data for errors by platform
                                                         const errorsByPlatform: Record<string, number> = {};
@@ -647,9 +688,9 @@ export function CompactDashboard() {
                                                             <Pie
                                                                 data={errorPlatformData}
                                                                 cx="50%"
-                                                                cy="50%"
-                                                                innerRadius={60}
-                                                                outerRadius={80}
+                                                                cy="45%"
+                                                                innerRadius={55}
+                                                                outerRadius={75}
                                                                 paddingAngle={4}
                                                                 dataKey="value"
                                                                 stroke="#1e1e22"
@@ -724,9 +765,9 @@ export function CompactDashboard() {
 
                                                                     // Custom JSX for tooltip content
                                                                     displayValue = (
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium">{formatNumber(numValue)} errors</span>
-                                                                            <span className="text-xs opacity-75">{percentage.toFixed(1)}% of errors</span>
+                                                                        <div className="flex flex-col text-white">
+                                                                            <span className="font-medium text-white">{formatNumber(numValue)} errors</span>
+                                                                            <span className="text-xs text-white opacity-90">{percentage.toFixed(1)}% of errors</span>
                                                                         </div>
                                                                     );
                                                                 } else {
@@ -739,15 +780,16 @@ export function CompactDashboard() {
                                                             return [displayValue, displayName];
                                                         }}
                                                         contentStyle={{
-                                                            backgroundColor: 'var(--background)',
-                                                            borderColor: 'var(--border)',
+                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                                                            color: 'white',
                                                             borderRadius: '8px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
                                                             zIndex: 50
                                                         }}
-                                                        wrapperStyle={{
-                                                            zIndex: 50
+                                                        itemStyle={{
+                                                            color: 'white'
                                                         }}
                                                     />
                                                 </PieChart>
@@ -764,8 +806,32 @@ export function CompactDashboard() {
                             {/* Error Details Table */}
                             <Card>
                                 <CardHeader className="pb-2">
-                                    <CardTitle>Error Details</CardTitle>
-                                    <CardDescription>Click on errors to select/filter</CardDescription>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle>Error Details</CardTitle>
+                                            <CardDescription>Click on errors to select/filter</CardDescription>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-muted-foreground">Sort by:</span>
+                                            <select
+                                                className="h-10 rounded-md border border-input bg-background px-4 py-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                onChange={(e) => {
+                                                    // Store sort preference in localStorage
+                                                    if (typeof window !== 'undefined') {
+                                                        localStorage.setItem('errorTableSort', e.target.value);
+                                                    }
+                                                    // Force a re-render
+                                                    handleRefresh();
+                                                }}
+                                                defaultValue={typeof window !== 'undefined' ? localStorage.getItem('errorTableSort') || 'count' : 'count'}
+                                            >
+                                                <option value="count">Count (Highest)</option>
+                                                <option value="priority">Priority</option>
+                                                <option value="type">Error Type</option>
+                                                <option value="platform">Platform</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="overflow-auto max-h-[600px]">
@@ -819,92 +885,148 @@ export function CompactDashboard() {
                                                             (errorGroups[groupKey].platforms[bot.platform] || 0) + 1;
                                                     });
 
-                                                    // Convert to array and sort by count (descending)
-                                                    return Object.values(errorGroups)
-                                                        .sort((a, b) => b.bots.length - a.bots.length)
-                                                        .map((group, idx) => {
-                                                            const allSelected = group.bots.every(bot =>
-                                                                selectedBots.some(selected => selected.uuid === bot.uuid));
+                                                    // Get sort preference from localStorage
+                                                    const sortPreference = typeof window !== 'undefined' ?
+                                                        localStorage.getItem('errorTableSort') || 'count' : 'count';
 
-                                                            return (
-                                                                <TableRow
-                                                                    key={`${group.type}-${idx}`}
-                                                                    className={allSelected ? 'bg-primary/10' : ''}
-                                                                >
-                                                                    <TableCell className="text-center">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={allSelected}
-                                                                            onChange={() => {
-                                                                                if (allSelected) {
-                                                                                    selectBotsByCategory(group.bots, false);
-                                                                                } else {
-                                                                                    selectBotsByCategory(group.bots, true);
-                                                                                }
-                                                                            }}
-                                                                            className="h-4 w-4 rounded border-gray-300"
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell
-                                                                        className="font-medium"
-                                                                        onClick={() => {
+                                                    // Convert to array and sort based on user preference
+                                                    const sortedGroups = Object.values(errorGroups).sort((a, b) => {
+                                                        switch (sortPreference) {
+                                                            case 'count':
+                                                                // Sort by number of occurrences (descending)
+                                                                return b.bots.length - a.bots.length;
+
+                                                            case 'priority':
+                                                                // Sort by priority (critical > high > medium > low)
+                                                                const priorityOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3, undefined: 4 };
+                                                                const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 4;
+                                                                const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 4;
+
+                                                                // First by priority, then by count if same priority
+                                                                return priorityA !== priorityB ?
+                                                                    priorityA - priorityB :
+                                                                    b.bots.length - a.bots.length;
+
+                                                            case 'type':
+                                                                // Sort by error type alphabetically
+                                                                return a.type.localeCompare(b.type) || b.bots.length - a.bots.length;
+
+                                                            case 'platform':
+                                                                // Get primary platform for each error
+                                                                const getPrimaryPlatform = (group: typeof a) => {
+                                                                    const platforms = Object.entries(group.platforms);
+                                                                    if (!platforms.length) return '';
+
+                                                                    // Sort platforms by count and return the one with most occurrences
+                                                                    platforms.sort((a, b) => b[1] - a[1]);
+                                                                    return platforms[0][0];
+                                                                };
+
+                                                                const platformA = getPrimaryPlatform(a);
+                                                                const platformB = getPrimaryPlatform(b);
+
+                                                                // First by platform, then by count
+                                                                return platformA.localeCompare(platformB) || b.bots.length - a.bots.length;
+
+                                                            default:
+                                                                return b.bots.length - a.bots.length;
+                                                        }
+                                                    });
+
+                                                    // For debugging - log the sorted results
+                                                    if (process.env.NODE_ENV === 'development') {
+                                                        console.log('Sorted error groups:',
+                                                            sortedGroups.map(g => ({
+                                                                type: g.type,
+                                                                message: g.message.substring(0, 30) + (g.message.length > 30 ? '...' : ''),
+                                                                count: g.bots.length
+                                                            }))
+                                                        );
+                                                    }
+
+                                                    return sortedGroups.map((group, idx) => {
+                                                        const allSelected = group.bots.every(bot =>
+                                                            selectedBots.some(selected => selected.uuid === bot.uuid));
+
+                                                        return (
+                                                            <TableRow
+                                                                key={`${group.type}-${idx}`}
+                                                                className={allSelected ? 'bg-primary/10' : ''}
+                                                            >
+                                                                <TableCell className="text-center">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={allSelected}
+                                                                        onChange={() => {
                                                                             if (allSelected) {
                                                                                 selectBotsByCategory(group.bots, false);
                                                                             } else {
                                                                                 selectBotsByCategory(group.bots, true);
                                                                             }
                                                                         }}
-                                                                        onMouseEnter={() => setHoveredBots(group.bots)}
-                                                                        onMouseLeave={() => setHoveredBots([])}
-                                                                        style={{ cursor: 'pointer' }}
-                                                                    >
-                                                                        <div className="flex flex-col">
-                                                                            <span>{group.type}</span>
-                                                                            {group.category && (
-                                                                                <span className="text-xs text-muted-foreground">
-                                                                                    Category: {group.category}
-                                                                                </span>
-                                                                            )}
-                                                                            {group.priority && (
-                                                                                <span className="text-xs text-muted-foreground">
-                                                                                    Priority: {group.priority}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </TableCell>
-                                                                    <TableCell>
-                                                                        <span className="text-sm whitespace-normal break-words">
-                                                                            <span className={getErrorMessageColor(group.message, group.priority, group.category)}>
-                                                                                {group.message}
+                                                                        className="h-4 w-4 rounded border-gray-300"
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell
+                                                                    className="font-medium"
+                                                                    onClick={() => {
+                                                                        if (allSelected) {
+                                                                            selectBotsByCategory(group.bots, false);
+                                                                        } else {
+                                                                            selectBotsByCategory(group.bots, true);
+                                                                        }
+                                                                    }}
+                                                                    onMouseEnter={() => setHoveredBots(group.bots)}
+                                                                    onMouseLeave={() => setHoveredBots([])}
+                                                                    style={{ cursor: 'pointer' }}
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span>{group.type}</span>
+                                                                        {group.category && (
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                Category: {group.category}
                                                                             </span>
+                                                                        )}
+                                                                        {group.priority && (
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                Priority: {group.priority}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <span className="text-sm whitespace-normal break-words">
+                                                                        <span className={getErrorMessageColor(group.message, group.priority, group.category)}>
+                                                                            {group.message}
                                                                         </span>
-                                                                    </TableCell>
-                                                                    <TableCell>
-                                                                        <div className="flex flex-wrap gap-1">
-                                                                            {Object.entries(group.platforms).map(([platform, count]) => (
-                                                                                <span
-                                                                                    key={platform}
-                                                                                    className="px-2 py-0.5 text-xs rounded-full bg-primary/10"
-                                                                                    style={{
-                                                                                        backgroundColor: platform === 'zoom' ? 'rgba(14, 113, 235, 0.1)' :
-                                                                                            platform === 'teams' ? 'rgba(98, 100, 167, 0.1)' :
-                                                                                                platform === 'google meet' ? 'rgba(0, 172, 71, 0.1)' :
-                                                                                                    'rgba(100, 116, 139, 0.1)',
-                                                                                        color: platform === 'zoom' ? '#0E71EB' :
-                                                                                            platform === 'teams' ? '#6264A7' :
-                                                                                                platform === 'google meet' ? '#00AC47' :
-                                                                                                    '#64748B'
-                                                                                    }}
-                                                                                >
-                                                                                    {platform}: {count}
-                                                                                </span>
-                                                                            ))}
-                                                                        </div>
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right">{group.bots.length}</TableCell>
-                                                                </TableRow>
-                                                            );
-                                                        });
+                                                                    </span>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {Object.entries(group.platforms).map(([platform, count]) => (
+                                                                            <span
+                                                                                key={platform}
+                                                                                className="px-2 py-0.5 text-xs rounded-full bg-primary/10"
+                                                                                style={{
+                                                                                    backgroundColor: platform === 'zoom' ? 'rgba(14, 113, 235, 0.1)' :
+                                                                                        platform === 'teams' ? 'rgba(98, 100, 167, 0.1)' :
+                                                                                            platform === 'google meet' ? 'rgba(0, 172, 71, 0.1)' :
+                                                                                                'rgba(100, 116, 139, 0.1)',
+                                                                                    color: platform === 'zoom' ? '#0E71EB' :
+                                                                                        platform === 'teams' ? '#6264A7' :
+                                                                                            platform === 'google meet' ? '#00AC47' :
+                                                                                                '#64748B'
+                                                                                }}
+                                                                            >
+                                                                                {platform}: {count}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-right">{group.bots.length}</TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    });
                                                 })()}
                                             </TableBody>
                                         </Table>
