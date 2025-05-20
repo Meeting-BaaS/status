@@ -17,6 +17,7 @@ import { ArrowDownRight, ArrowUpRight, Loader2, RefreshCw } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { DateValueType } from "react-tailwindcss-datepicker"
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { BotErrorAnalysis } from "./bot-error-analysis"
 import { BotErrorTimeline } from "./bot-error-timeline"
 import { BotPerformanceChart } from "./bot-performance-chart"
@@ -288,6 +289,142 @@ export function CompactDashboard() {
                                             : "All time"
                                     }
                                 />
+                            </div>
+
+                            {/* Doughnut Charts Dashboard Metrics */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle>Success vs Error Ratio</CardTitle>
+                                        <CardDescription>Bot completion status breakdown</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[220px] flex items-center justify-center">
+                                        <div className="w-full h-full relative">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={[
+                                                            { name: "Successful", value: getSuccessfulBots(), color: "hsl(var(--success))" },
+                                                            { name: "Error", value: getErrorBots(), color: "hsl(var(--destructive))" }
+                                                        ]}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={80}
+                                                        paddingAngle={2}
+                                                        dataKey="value"
+                                                    >
+                                                        {[
+                                                            { name: "Successful", value: getSuccessfulBots(), color: "hsl(var(--success))" },
+                                                            { name: "Error", value: getErrorBots(), color: "hsl(var(--destructive))" }
+                                                        ].map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip
+                                                        formatter={(value: number) => [`${formatNumber(value)} bots`, ""]}
+                                                        labelFormatter={() => ""}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-lg font-semibold">{formatPercentage(getSuccessRate())}</span>
+                                                <span className="text-xs text-muted-foreground">Success Rate</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle>Error Category Distribution</CardTitle>
+                                        <CardDescription>Top error categories</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[220px] flex items-center justify-center">
+                                        <div className="w-full h-full relative">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={data.errorTypes.slice(0, 5).map((error, idx) => ({
+                                                            name: error.type,
+                                                            value: error.count,
+                                                            color: `hsl(var(--chart-${(idx % 10) + 1}))`
+                                                        }))}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={80}
+                                                        paddingAngle={2}
+                                                        dataKey="value"
+                                                    >
+                                                        {data.errorTypes.slice(0, 5).map((error, idx) => (
+                                                            <Cell key={`cell-${idx}`} fill={`hsl(var(--chart-${(idx % 10) + 1}))`} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip
+                                                        formatter={(value: number) => [`${formatNumber(value)} occurrences`, ""]}
+                                                        labelFormatter={(name: string) => data.errorTypes.find(e => e.type === name)?.type || ""}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-lg font-semibold">{formatNumber(getErrorBots())}</span>
+                                                <span className="text-xs text-muted-foreground">Total Errors</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle>User Reported Issues</CardTitle>
+                                        <CardDescription>User feedback status</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="h-[220px] flex items-center justify-center">
+                                        <div className="w-full h-full relative">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={data.userReportedErrors.map((status, idx) => ({
+                                                            name: status.status,
+                                                            value: status.count,
+                                                            color: status.status === 'open' ? 'hsl(var(--destructive))' :
+                                                                status.status === 'in_progress' ? 'hsl(var(--warning))' :
+                                                                    'hsl(var(--success))'
+                                                        }))}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={80}
+                                                        paddingAngle={2}
+                                                        dataKey="value"
+                                                    >
+                                                        {data.userReportedErrors.map((status, idx) => (
+                                                            <Cell
+                                                                key={`cell-${idx}`}
+                                                                fill={status.status === 'open' ? 'hsl(var(--destructive))' :
+                                                                    status.status === 'in_progress' ? 'hsl(var(--warning))' :
+                                                                        'hsl(var(--success))'}
+                                                            />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip
+                                                        formatter={(value: number) => [`${formatNumber(value)} reports`, ""]}
+                                                        labelFormatter={(name: string) =>
+                                                            name === 'open' ? 'Open' :
+                                                                name === 'in_progress' ? 'In Progress' :
+                                                                    'Closed'
+                                                        }
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-lg font-semibold">{formatNumber(data.userReportedErrors.reduce((sum, item) => sum + item.count, 0))}</span>
+                                                <span className="text-xs text-muted-foreground">User Reports</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
 
                             {/* Platform Distribution */}
