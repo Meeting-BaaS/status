@@ -1,9 +1,9 @@
-import type { FilterState } from "@/lib/types"
-import type { DateRangeType } from "react-tailwindcss-datepicker"
-import { DateRangeFilter } from "@/components/filters/date-range-filter"
 import { AdditionalFilters } from "@/components/filters/additional-filters"
-import { LimitSelector } from "./limit-selector"
+import { DateRangeFilter } from "@/components/filters/date-range-filter"
+import type { FilterState } from "@/lib/types"
 import { Loader2 } from "lucide-react"
+import type { DateRangeType } from "react-tailwindcss-datepicker"
+import { LimitSelector } from "./limit-selector"
 
 interface FiltersProps {
   filters: FilterState

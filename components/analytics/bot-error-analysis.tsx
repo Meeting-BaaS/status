@@ -1,30 +1,55 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-  type ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent
+  ChartTooltipContent,
+  type ChartConfig
 } from "@/components/ui/chart"
-import { formatNumber, formatPercentage } from "@/lib/utils"
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import type { ErrorType } from "@/lib/types"
+import { formatNumber, formatPercentage } from "@/lib/utils"
+import { SortAsc, SortDesc } from "lucide-react"
+import { useState } from "react"
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 
 interface BotErrorAnalysisProps {
   errorTypes: ErrorType[]
 }
 
 export function BotErrorAnalysis({ errorTypes }: BotErrorAnalysisProps) {
-  // Create chart config
-  const chartConfig = errorTypes.reduce((acc, error) => {
-    return Object.assign(acc, {
-      [error.type.toLowerCase().replace(/\s+/g, "_")]: {
-        label: error.type,
-        color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))`
-      }
-    })
-  }, {} as ChartConfig)
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [selectedError, setSelectedError] = useState<string | null>(null)
+
+  // Sort error types by count
+  const sortedErrorTypes = [...errorTypes].sort((a, b) => {
+    return sortOrder === "desc"
+      ? b.count - a.count
+      : a.count - b.count
+  })
+
+  // Filter by selection if needed
+  const filteredErrorTypes = selectedError
+    ? sortedErrorTypes.filter(error => error.type === selectedError)
+    : sortedErrorTypes
+
+  // Calculate totals
+  const totalErrors = errorTypes.reduce((sum, type) => sum + type.count, 0)
+
+  // Create chart config for visualization
+  const chartConfig = errorTypes.reduce(
+    (acc, error, index) => {
+      return Object.assign(acc, {
+        [error.type.toLowerCase().replace(/\s+/g, "_")]: {
+          label: error.type,
+          color: `hsl(var(--chart-${(index % 10) + 1}))`
+        }
+      })
+    },
+    {} as ChartConfig
+  )
 
   // Transform data for recharts
   const chartData = errorTypes.map((error) => ({
@@ -34,66 +59,139 @@ export function BotErrorAnalysis({ errorTypes }: BotErrorAnalysisProps) {
     percentage: error.percentage
   }))
 
+  const toggleSort = () => {
+    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+  }
+
   return (
     <div className="space-y-4">
-      {/* Chart card */}
-      <Card className="p-4">
-        <div className="h-64">
-          <ChartContainer config={chartConfig} className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
-                  labelLine={false}
-                >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.name} fill={`var(--color-${entry.name})`} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(value: unknown) => formatNumber(Number(value))}
-                    />
-                  }
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-medium">Error Distribution</h3>
+          <p className="text-muted-foreground text-sm">
+            Showing {formatNumber(totalErrors)} errors across {errorTypes.length} categories
+          </p>
         </div>
-      </Card>
 
-      {/* Error breakdown card */}
-      <Card className="p-4">
-        <h3 className="mb-4 font-medium text-lg">Error Type Breakdown</h3>
-        <div className="space-y-3">
-          {errorTypes.map((error) => (
-            <div key={error.type} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{
-                    backgroundColor: `hsl(var(--chart-${(errorTypes.indexOf(error) % 5) + 1}))`
-                  }}
-                />
-                <span className="text-sm">{error.type}</span>
+        <div className="flex flex-wrap gap-2">
+          {selectedError && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedError(null)}
+              className="text-xs"
+            >
+              Clear Filter
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleSort}
+            className="gap-1 text-xs"
+          >
+            Sort {sortOrder === "desc" ? <SortDesc className="h-3 w-3" /> : <SortAsc className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="md:col-span-1">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Error Categories</h4>
+                <span className="text-xs text-muted-foreground">Count</span>
               </div>
-              <div className="flex gap-4">
-                <span className="text-muted-foreground text-sm">{formatNumber(error.count)}</span>
-                <span className="font-medium text-sm">{formatPercentage(error.percentage)}</span>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                {sortedErrorTypes.map((error) => (
+                  <button
+                    key={error.type}
+                    className={`w-full flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors ${selectedError === error.type ? "bg-secondary" : ""
+                      }`}
+                    onClick={() => setSelectedError(error.type === selectedError ? null : error.type)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{
+                          backgroundColor: chartConfig[error.type.toLowerCase().replace(/\s+/g, "_")]?.color
+                        }}
+                      />
+                      <span className="text-sm truncate max-w-[150px]" title={error.type}>
+                        {error.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {formatNumber(error.count)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground w-16 text-right">
+                        {formatPercentage(error.percentage)}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardContent className="p-6">
+            <div className="h-80">
+              <ChartContainer config={chartConfig}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={
+                        selectedError
+                          ? chartData.filter(d => d.label === selectedError)
+                          : chartData
+                      }
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      nameKey="name"
+                      labelLine={false}
+                    >
+                      {chartData.map((entry) => (
+                        <Cell
+                          key={entry.name}
+                          fill={`var(--color-${entry.name})`}
+                          opacity={selectedError && selectedError !== entry.label ? 0.3 : 1}
+                        />
+                      ))}
+                    </Pie>
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value: unknown) => formatNumber(Number(value))}
+                        />
+                      }
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-bold text-4xl">
+                    {formatNumber(selectedError
+                      ? errorTypes.find(e => e.type === selectedError)?.count || 0
+                      : totalErrors
+                    )}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    {selectedError || "Total Errors"}
+                  </span>
+                </div>
+              </ChartContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
