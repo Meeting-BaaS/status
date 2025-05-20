@@ -1,8 +1,14 @@
+import {
+    allErrorCategories,
+    allErrorPriorities,
+    allPlatforms,
+    allStatuses,
+    allUserReportedErrorStatuses
+} from "@/lib/filter-options"
+import type { FilterState } from "@/lib/types"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
-import { allPlatforms, allStatuses, allUserReportedErrorStatuses } from "@/lib/filter-options"
 import type { DateValueType } from "react-tailwindcss-datepicker/dist/types"
-import type { FilterState } from "@/lib/types"
 
 // Initialize dayjs UTC plugin
 dayjs.extend(utc)
@@ -31,7 +37,9 @@ export function validateDate(dateStr: string | null): Date | null {
 export function validateFilterValues(
   platformFilters: string | null,
   statusFilters: string | null,
-  userReportedErrorStatusFilters: string | null
+  userReportedErrorStatusFilters: string | null,
+  errorCategoryFilters: string | null = null,
+  errorPriorityFilters: string | null = null
 ): FilterState {
   const validPlatformFilters =
     platformFilters
@@ -51,10 +59,24 @@ export function validateFilterValues(
       .map((value) => findOptionBySearchParam(allUserReportedErrorStatuses, value))
       .filter((value): value is string => value !== undefined) ?? []
 
+  const validErrorCategoryFilters =
+    errorCategoryFilters
+      ?.split(",")
+      .map((value) => findOptionBySearchParam(allErrorCategories, value))
+      .filter((value): value is string => value !== undefined) ?? []
+
+  const validErrorPriorityFilters =
+    errorPriorityFilters
+      ?.split(",")
+      .map((value) => findOptionBySearchParam(allErrorPriorities, value))
+      .filter((value): value is string => value !== undefined) ?? []
+
   return {
     platformFilters: validPlatformFilters,
     statusFilters: validStatusFilters,
-    userReportedErrorStatusFilters: validUserReportedErrorStatusFilters
+    userReportedErrorStatusFilters: validUserReportedErrorStatusFilters,
+    errorCategoryFilters: validErrorCategoryFilters,
+    errorPriorityFilters: validErrorPriorityFilters
   }
 }
 
@@ -63,6 +85,8 @@ export function filterStateToSearchValues(filters: FilterState): {
   platformFilters: string[]
   statusFilters: string[]
   userReportedErrorStatusFilters: string[]
+  errorCategoryFilters: string[]
+  errorPriorityFilters: string[]
 } {
   return {
     platformFilters: filters.platformFilters
@@ -73,6 +97,12 @@ export function filterStateToSearchValues(filters: FilterState): {
       .filter((value): value is string => value !== undefined),
     userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters
       .map((value) => getSearchParamFromValue(allUserReportedErrorStatuses, value))
+      .filter((value): value is string => value !== undefined),
+    errorCategoryFilters: (filters.errorCategoryFilters || [])
+      .map((value) => getSearchParamFromValue(allErrorCategories, value))
+      .filter((value): value is string => value !== undefined),
+    errorPriorityFilters: (filters.errorPriorityFilters || [])
+      .map((value) => getSearchParamFromValue(allErrorPriorities, value))
       .filter((value): value is string => value !== undefined)
   }
 }
@@ -146,6 +176,24 @@ export function updateSearchParams(
     )
   } else {
     params.delete("userReportedErrorStatusFilters")
+  }
+
+  if (searchValues.errorCategoryFilters.length > 0) {
+    params.set(
+      "errorCategoryFilters",
+      searchValues.errorCategoryFilters.join(",")
+    )
+  } else {
+    params.delete("errorCategoryFilters")
+  }
+
+  if (searchValues.errorPriorityFilters.length > 0) {
+    params.set(
+      "errorPriorityFilters",
+      searchValues.errorPriorityFilters.join(",")
+    )
+  } else {
+    params.delete("errorPriorityFilters")
   }
 
   return params

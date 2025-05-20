@@ -9,6 +9,9 @@ export interface FetchLogsParams {
   status_type?: string
   user_reported_error_json?: string
   bot_uuid?: string
+  status_category?: string
+  status_priority?: string
+  user_reported_status?: string
 }
 
 /**
@@ -30,6 +33,11 @@ export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginat
   if (params.user_reported_error_json)
     queryParams.append("user_reported_error_json", params.user_reported_error_json)
   if (params.bot_uuid) queryParams.append("bot_uuid", params.bot_uuid)
+  
+  // Add new filters from Rust implementation
+  if (params.status_category) queryParams.append("status_category", params.status_category)
+  if (params.status_priority) queryParams.append("status_priority", params.status_priority)
+  if (params.user_reported_status) queryParams.append("user_reported_status", params.user_reported_status)
 
   const response = await fetch(`/api/bots/all?${queryParams.toString()}`)
   if (!response.ok) {

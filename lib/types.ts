@@ -2,6 +2,25 @@ export type PlatformName = "zoom" | "teams" | "google meet" | "unknown"
 export type StatusType = "success" | "error" | "pending" | "warning"
 export type UserReportedErrorStatus = "open" | "closed" | "in_progress"
 
+// Error categories from Rust implementation
+export type ErrorCategory = 
+  | "system_error"
+  | "auth_error" 
+  | "capacity_error"
+  | "connection_error"
+  | "permission_error"
+  | "input_error"
+  | "duplicate_error"
+  | "webhook_error"
+  | "api_error"
+  | "unknown_error"
+  | "stalled_error"
+  | "success"
+  | "pending"
+
+// Error priorities from Rust implementation
+export type ErrorPriority = "critical" | "high" | "medium" | "low" | "none"
+
 export type UserReportedErrorMessage = {
   created_at: string
   author: string
@@ -19,7 +38,7 @@ export type Status = {
   type: StatusType
   details?: string | null
   sort_priority: number
-  category: string
+  category: ErrorCategory
 }
 
 export type BotData = {
@@ -75,6 +94,8 @@ export type FilterState = {
   platformFilters: string[]
   statusFilters: string[]
   userReportedErrorStatusFilters: string[]
+  errorCategoryFilters?: string[]
+  errorPriorityFilters?: string[]
 }
 
 export type PlatformDistribution = {
@@ -94,6 +115,21 @@ export type DailyStats = {
 
 export type ErrorType = {
   type: string
+  count: number
+  percentage: number
+  category?: ErrorCategory
+  priority?: ErrorPriority
+}
+
+export type ErrorCategoryDistribution = {
+  category: ErrorCategory
+  count: number
+  percentage: number
+  types: ErrorType[]
+}
+
+export type UserReportedErrorDistribution = {
+  status: UserReportedErrorStatus
   count: number
   percentage: number
 }

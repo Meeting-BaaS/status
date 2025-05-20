@@ -18,6 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { DateValueType } from "react-tailwindcss-datepicker"
 import { BotErrorAnalysis } from "./bot-error-analysis"
+import { BotErrorTimeline } from "./bot-error-timeline"
 import { BotPerformanceChart } from "./bot-performance-chart"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
@@ -49,7 +50,9 @@ export function CompactDashboard() {
         validateFilterValues(
             searchParams.get("platformFilters"),
             searchParams.get("statusFilters"),
-            searchParams.get("userReportedErrorStatusFilters")
+            searchParams.get("userReportedErrorStatusFilters"),
+            searchParams.get("errorCategoryFilters"),
+            searchParams.get("errorPriorityFilters")
         )
     )
 
@@ -348,9 +351,29 @@ export function CompactDashboard() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-6">
-                                    <BotErrorAnalysis errorTypes={data.errorTypes} />
+                                    <BotErrorAnalysis
+                                        errorTypes={data.errorTypes}
+                                        userReportedErrors={data.userReportedErrors}
+                                    />
                                 </CardContent>
                             </Card>
+
+                            {data.errorsByDate && data.errorsByDate.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Error Timeline</CardTitle>
+                                        <CardDescription>
+                                            Error trends over time by category and priority
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <BotErrorTimeline
+                                            dailyStats={data.dailyStats}
+                                            errorsByDate={data.errorsByDate}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
                         </TabsContent>
                     </Tabs>
                 </>

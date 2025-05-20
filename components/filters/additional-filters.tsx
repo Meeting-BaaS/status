@@ -1,6 +1,8 @@
 "use client"
 
+import { CheckboxFilter } from "@/components/filters/checkbox-filter"
 import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import {
   Sheet,
   SheetContent,
@@ -9,15 +11,19 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet"
-import { CheckboxFilter } from "@/components/filters/checkbox-filter"
-import { allPlatforms, allStatuses, allUserReportedErrorStatuses } from "@/lib/filter-options"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import {
+  allErrorCategories,
+  allErrorPriorities,
+  allPlatforms,
+  allStatuses,
+  allUserReportedErrorStatuses
+} from "@/lib/filter-options"
 import { filtersSchema, type FiltersFormData } from "@/lib/schemas/filters"
-import { Filter, FunnelX } from "lucide-react"
 import type { FilterState } from "@/lib/types"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Filter, FunnelX } from "lucide-react"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
 
 const filtersFields = [
   {
@@ -34,6 +40,16 @@ const filtersFields = [
     name: "userReportedErrorStatusFilters",
     label: "User Reported Error",
     options: allUserReportedErrorStatuses
+  },
+  {
+    name: "errorCategoryFilters",
+    label: "Error Category",
+    options: allErrorCategories
+  },
+  {
+    name: "errorPriorityFilters",
+    label: "Error Priority",
+    options: allErrorPriorities
   }
 ]
 
@@ -49,7 +65,9 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
     defaultValues: {
       platformFilters: filters.platformFilters,
       statusFilters: filters.statusFilters,
-      userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters
+      userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters,
+      errorCategoryFilters: filters.errorCategoryFilters || [],
+      errorPriorityFilters: filters.errorPriorityFilters || []
     }
   })
 
@@ -58,7 +76,9 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
     setFilters({
       platformFilters: data.platformFilters ?? [],
       statusFilters: data.statusFilters ?? [],
-      userReportedErrorStatusFilters: data.userReportedErrorStatusFilters ?? []
+      userReportedErrorStatusFilters: data.userReportedErrorStatusFilters ?? [],
+      errorCategoryFilters: data.errorCategoryFilters ?? [],
+      errorPriorityFilters: data.errorPriorityFilters ?? []
     })
   }
 
@@ -67,17 +87,24 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
     form.reset({
       platformFilters: [],
       statusFilters: [],
-      userReportedErrorStatusFilters: []
+      userReportedErrorStatusFilters: [],
+      errorCategoryFilters: [],
+      errorPriorityFilters: []
     })
     setFilters({
       platformFilters: [],
       statusFilters: [],
-      userReportedErrorStatusFilters: []
+      userReportedErrorStatusFilters: [],
+      errorCategoryFilters: [],
+      errorPriorityFilters: []
     })
   }
 
   const isFiltered = Object.keys(filters).some(
-    (key) => filters[key as keyof FilterState].length > 0
+    (key) => {
+      const filterArray = filters[key as keyof FilterState];
+      return filterArray && filterArray.length > 0;
+    }
   )
 
   return (

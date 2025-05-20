@@ -35,6 +35,22 @@ interface ChartDataItem {
   [platform: string]: number | string; // Allow dynamic platform properties
 }
 
+// Define types for stacked data
+interface StackedDataItem {
+  date: string;
+  errorBots: number;
+  successfulBots: number;
+  [platform: string]: number | string;
+}
+
+// Define types for percentage data
+interface PercentageDataItem {
+  date: string;
+  errorRate: number;
+  successRate: number;
+  [key: string]: number | string; // For platform percentage keys
+}
+
 export function BotPerformanceChart({ dailyStats }: BotPerformanceChartProps) {
   const [chartType, setChartType] = useState<"line" | "bar">("line")
   const [dataType, setDataType] = useState<"absolute" | "percentage">("absolute")
@@ -56,7 +72,7 @@ export function BotPerformanceChart({ dailyStats }: BotPerformanceChartProps) {
   }, [] as string[])
 
   // Format data for charting
-  const chartData = sortedStats.map(day => {
+  const chartData: ChartDataItem[] = sortedStats.map(day => {
     const formattedDate = dayjs(day.date).format("MMM D")
     const platforms = { ...day.platforms }
 
@@ -71,11 +87,11 @@ export function BotPerformanceChart({ dailyStats }: BotPerformanceChartProps) {
       successRate: successRate,
       errorRate: 100 - successRate,
       ...platforms
-    } as ChartDataItem
+    }
   })
 
   // Data transformation for stacked bar chart showing absolute values
-  const getStackedData = () => {
+  const getStackedData = (): StackedDataItem[] => {
     return chartData.map(day => {
       const platformData: Record<string, number> = {}
 
@@ -93,7 +109,7 @@ export function BotPerformanceChart({ dailyStats }: BotPerformanceChartProps) {
   }
 
   // Data transformation for stacked percentage chart
-  const getPercentageData = () => {
+  const getPercentageData = (): PercentageDataItem[] => {
     return chartData.map(day => {
       const platformData: Record<string, number> = {}
       const total = day.totalBots || 1 // Avoid division by zero
