@@ -464,16 +464,19 @@ export function CompactDashboard() {
                                                             return [displayValue, displayName];
                                                         }}
                                                         contentStyle={{
-                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                                                            color: 'white',
+                                                            backgroundColor: 'var(--popover)',
+                                                            borderColor: 'var(--border)',
+                                                            color: 'var(--popover-foreground)',
                                                             borderRadius: '8px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-                                                            zIndex: 50
+                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                                                            zIndex: 1000
                                                         }}
                                                         itemStyle={{
-                                                            color: 'white'
+                                                            color: 'var(--popover-foreground)'
+                                                        }}
+                                                        wrapperStyle={{
+                                                            zIndex: 1000
                                                         }}
                                                     />
                                                 </PieChart>
@@ -631,16 +634,19 @@ export function CompactDashboard() {
                                                             return [displayValue, displayName];
                                                         }}
                                                         contentStyle={{
-                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                                                            color: 'white',
+                                                            backgroundColor: 'var(--popover)',
+                                                            borderColor: 'var(--border)',
+                                                            color: 'var(--popover-foreground)',
                                                             borderRadius: '8px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-                                                            zIndex: 50
+                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                                                            zIndex: 1000
                                                         }}
                                                         itemStyle={{
-                                                            color: 'white'
+                                                            color: 'var(--popover-foreground)'
+                                                        }}
+                                                        wrapperStyle={{
+                                                            zIndex: 1000
                                                         }}
                                                     />
                                                 </PieChart>
@@ -664,171 +670,130 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[350px] flex items-center justify-center">
-                                        <div className="w-full h-full relative">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Legend
-                                                        layout="horizontal"
-                                                        verticalAlign="bottom"
-                                                        align="center"
-                                                        wrapperStyle={{
-                                                            paddingTop: '10px',
-                                                            fontSize: '11px',
-                                                            fontWeight: 500
-                                                        }}
-                                                        formatter={(value, entry) => {
-                                                            return <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>{value}</span>;
-                                                        }}
-                                                    />
-                                                    {(() => {
-                                                        // Prepare data for errors by platform
-                                                        const errorsByPlatform: Record<string, number> = {};
-                                                        data.errorBots.forEach(bot => {
-                                                            errorsByPlatform[bot.platform] = (errorsByPlatform[bot.platform] || 0) + 1;
-                                                        });
+                                    <CardContent className="h-[300px]">
+                                        {(() => {
+                                            // Prepare data for errors by platform
+                                            const errorsByPlatform: Record<string, number> = {};
+                                            data.errorBots.forEach(bot => {
+                                                errorsByPlatform[bot.platform] = (errorsByPlatform[bot.platform] || 0) + 1;
+                                            });
 
-                                                        const errorPlatformData = Object.entries(errorsByPlatform).map(([platform, count], idx) => ({
-                                                            name: platform,
-                                                            value: count,
-                                                            color: chartColors[`chart${(idx % 10) + 1}` as keyof typeof chartColors],
-                                                            platform,
-                                                            percentage: (count / data.errorBots.length) * 100
-                                                        }));
+                                            // Convert to array for processing
+                                            const platforms = Object.keys(errorsByPlatform);
+
+                                            if (platforms.length === 0) {
+                                                return (
+                                                    <div className="flex h-full items-center justify-center">
+                                                        <p className="text-muted-foreground">No error data available</p>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Always use a 2x2 grid
+                                            const gridCols = 2;
+                                            const needsCentering = platforms.length % 2 === 1;
+
+                                            return (
+                                                <div className="grid grid-cols-2 gap-4 h-full">
+                                                    {platforms.map((platform, index) => {
+                                                        const platformErrorCount = errorsByPlatform[platform];
+                                                        const platformBots = data.errorBots.filter(bot => bot.platform === platform);
+                                                        const platformTotal = data.allBots.filter(bot => bot.platform === platform).length;
+                                                        const successCount = platformTotal - platformErrorCount;
+                                                        const successRate = platformTotal > 0 ? (successCount / platformTotal) * 100 : 0;
+
+                                                        // Get color for this platform
+                                                        const color = platformColors[platform as keyof typeof platformColors] ||
+                                                            distinctColors[index % distinctColors.length];
+
+                                                        // If it's the last item and we need centering, apply special class
+                                                        const isLastItem = index === platforms.length - 1;
+                                                        const centerClass = (needsCentering && isLastItem) ? "col-span-2 mx-auto max-w-[160px]" : "";
 
                                                         return (
-                                                            <Pie
-                                                                data={errorPlatformData}
-                                                                cx="50%"
-                                                                cy="45%"
-                                                                innerRadius={55}
-                                                                outerRadius={75}
-                                                                paddingAngle={4}
-                                                                dataKey="value"
-                                                                stroke="#1e1e22"
-                                                                strokeWidth={2}
-                                                                label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
-                                                                    // Calculate the position for the extended label
-                                                                    const RADIAN = Math.PI / 180;
-                                                                    const radius = outerRadius + 25;
-                                                                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                                                                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                                                                    // Determine text anchor based on position
-                                                                    const textAnchor = x > cx ? 'start' : 'end';
-
-                                                                    // Calculate the percentage of total errors
-                                                                    const totalErrorsOnPlatforms = errorPlatformData.reduce((sum, item) => sum + item.value, 0);
-                                                                    const percentage = totalErrorsOnPlatforms > 0 ? (value / totalErrorsOnPlatforms) * 100 : 0;
-
-                                                                    return (
-                                                                        <text
-                                                                            x={x}
-                                                                            y={y}
-                                                                            fill="var(--foreground)"
-                                                                            textAnchor={textAnchor}
-                                                                            dominantBaseline="central"
-                                                                            style={{
-                                                                                fontSize: '11px',
-                                                                                fontWeight: 500,
-                                                                            }}
-                                                                        >
-                                                                            {`${name.length > 35 ? name.substring(0, 32) + '...' : name}: ${percentage.toFixed(1)}%`}
-                                                                        </text>
-                                                                    );
-                                                                }}
-                                                                labelLine={{
-                                                                    stroke: 'var(--muted-foreground)',
-                                                                    strokeWidth: 1,
-                                                                    strokeDasharray: '3,3'
-                                                                }}
-                                                                onClick={(entry, index) => {
-                                                                    // Find error bots with this platform and select them
-                                                                    const platform = entry.platform;
-                                                                    const matchingBots = data.errorBots.filter(bot => bot.platform === platform);
-                                                                    selectBotsByCategory(matchingBots);
-                                                                }}
-                                                                onMouseEnter={(entry, index) => {
-                                                                    const platform = entry.platform;
-                                                                    const matchingBots = data.errorBots.filter(bot => bot.platform === platform);
-                                                                    setHoveredBots(matchingBots);
-                                                                }}
-                                                                onMouseLeave={() => {
-                                                                    setHoveredBots([]);
-                                                                }}
+                                                            <div
+                                                                key={`platform-${platform}`}
+                                                                className={`flex flex-col items-center justify-center ${centerClass}`}
+                                                                onClick={() => selectBotsByCategory(platformBots)}
+                                                                onMouseEnter={() => setHoveredBots(platformBots)}
+                                                                onMouseLeave={() => setHoveredBots([])}
+                                                                style={{ cursor: 'pointer' }}
                                                             >
-                                                                {errorPlatformData.map((item, idx) => {
-                                                                    const color = platformColors[item.platform as keyof typeof platformColors] ||
-                                                                        distinctColors[idx % distinctColors.length];
+                                                                <div className="text-sm font-medium mb-2 capitalize">{platform}</div>
+                                                                <div className="w-full h-[120px] flex items-center justify-center relative">
+                                                                    <ResponsiveContainer width="100%" height="100%">
+                                                                        <PieChart>
+                                                                            <Pie
+                                                                                data={[
+                                                                                    { name: "Success", value: successCount, fill: statusColors.success },
+                                                                                    { name: "Error", value: platformErrorCount, fill: color }
+                                                                                ]}
+                                                                                cx="50%"
+                                                                                cy="50%"
+                                                                                innerRadius={0}
+                                                                                outerRadius={40}
+                                                                                paddingAngle={0}
+                                                                                dataKey="value"
+                                                                                stroke="var(--background)"
+                                                                                strokeWidth={1}
+                                                                            >
+                                                                                <Cell key="success-cell" fill={statusColors.success} />
+                                                                                <Cell
+                                                                                    key="error-cell"
+                                                                                    fill={color}
+                                                                                    style={{
+                                                                                        filter: 'drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.15))'
+                                                                                    }}
+                                                                                />
+                                                                            </Pie>
+                                                                            <Tooltip
+                                                                                formatter={(value, name) => {
+                                                                                    const numValue = Number(value);
+                                                                                    const percentage = platformTotal > 0 ?
+                                                                                        (numValue / platformTotal) * 100 : 0;
 
-                                                                    return (
-                                                                        <Cell
-                                                                            key={`error-platform-cell-${idx}`}
-                                                                            fill={color}
-                                                                            style={{
-                                                                                cursor: 'pointer',
-                                                                                filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.2))',
-                                                                                zIndex: 5 - idx
-                                                                            }}
-                                                                            stroke="#1e1e22"
-                                                                            strokeWidth={1}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </Pie>
-                                                        )
-                                                    })()}
-                                                    <Tooltip
-                                                        formatter={(value, name, props: any) => {
-                                                            // Display formatted values based on the error count
-                                                            let displayValue;
-                                                            let displayName = props.payload.platform || name || "";
-
-                                                            try {
-                                                                // Try to convert to number and format
-                                                                const numValue = Number(value);
-                                                                if (!isNaN(numValue)) {
-                                                                    // Calculate percentage
-                                                                    const totalErrors = getErrorBots();
-                                                                    const percentage = totalErrors > 0 ?
-                                                                        (numValue / totalErrors) * 100 : 0;
-
-                                                                    // Custom JSX for tooltip content
-                                                                    displayValue = (
-                                                                        <div className="flex flex-col text-white">
-                                                                            <span className="font-medium text-white">{formatNumber(numValue)} errors</span>
-                                                                            <span className="text-xs text-white opacity-90">{percentage.toFixed(1)}% of errors</span>
+                                                                                    return [
+                                                                                        <div className="flex flex-col text-white">
+                                                                                            <span className="font-medium text-white">{formatNumber(numValue)} bots</span>
+                                                                                            <span className="text-xs text-white opacity-90">{percentage.toFixed(1)}% of total</span>
+                                                                                        </div>,
+                                                                                        name
+                                                                                    ];
+                                                                                }}
+                                                                                contentStyle={{
+                                                                                    backgroundColor: 'var(--popover)',
+                                                                                    borderColor: 'var(--border)',
+                                                                                    color: 'var(--popover-foreground)',
+                                                                                    borderRadius: '8px',
+                                                                                    padding: '8px 12px',
+                                                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                                                                                    zIndex: 1000
+                                                                                }}
+                                                                                itemStyle={{
+                                                                                    color: 'var(--popover-foreground)'
+                                                                                }}
+                                                                                wrapperStyle={{
+                                                                                    zIndex: 1000
+                                                                                }}
+                                                                            />
+                                                                        </PieChart>
+                                                                    </ResponsiveContainer>
+                                                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                                        <div className="flex flex-col items-center justify-center bg-background rounded-full w-[54px] h-[54px] shadow-sm border border-border/50">
+                                                                            <span className="text-sm font-medium" style={{ color: statusColors.success }}>{formatPercentage(successRate)}</span>
+                                                                            <span className="text-[10px] text-muted-foreground">Success</span>
                                                                         </div>
-                                                                    );
-                                                                } else {
-                                                                    displayValue = String(value);
-                                                                }
-                                                            } catch (e) {
-                                                                displayValue = String(value);
-                                                            }
-
-                                                            return [displayValue, displayName];
-                                                        }}
-                                                        contentStyle={{
-                                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                                                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                                                            color: 'white',
-                                                            borderRadius: '8px',
-                                                            padding: '8px 12px',
-                                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-                                                            zIndex: 50
-                                                        }}
-                                                        itemStyle={{
-                                                            color: 'white'
-                                                        }}
-                                                    />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-sm font-medium text-success">{formatPercentage(getSuccessRate())}</span>
-                                                <span className="text-xs text-muted-foreground">Success Rate</span>
-                                            </div>
-                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-2 text-xs text-muted-foreground">
+                                                                    {formatNumber(platformErrorCount)} errors / {formatNumber(platformTotal)} total
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
                                     </CardContent>
                                 </Card>
                             </div>

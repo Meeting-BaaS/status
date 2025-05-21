@@ -58,7 +58,7 @@ export async function fetchTokenConsumption(startDate: string, endDate: string):
   queryParams.append("end_date", endDate)
 
   // Use the same /api/ prefix pattern as the fetchBotStats function
-  const response = await fetch(`/api/bots/token-consumption?${queryParams.toString()}`)
+  const response = await fetch(`/api/bots/token_consumption?${queryParams.toString()}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch token consumption: ${response.status} ${response.statusText}`)
   }
@@ -71,7 +71,7 @@ export async function fetchTokenConsumption(startDate: string, endDate: string):
  */
 export async function fetchUserTokens(): Promise<UserTokensResponse> {
   // Use the same /api/ prefix pattern as the fetchBotStats function
-  const response = await fetch(`/api/bots/user-tokens`)
+  const response = await fetch(`/api/bots/user_tokens`)
   if (!response.ok) {
     throw new Error(`Failed to fetch user tokens: ${response.status} ${response.statusText}`)
   }
