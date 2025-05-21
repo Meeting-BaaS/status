@@ -11,18 +11,24 @@ import { useBotStats } from "@/hooks/use-bot-stats"
 import { chartColors } from "@/lib/chart-colors"
 import { genericError } from "@/lib/errors"
 import { updateSearchParams, validateDateRange, validateFilterValues } from "@/lib/search-params"
-import type { FilterState, FormattedBotData } from "@/lib/types"
-import { formatNumber, formatPercentage, statusColors } from "@/lib/utils"
+import type { FilterState } from "@/lib/types"
+import { formatNumber, formatPercentage, groupAndCategorizeErrors, statusColors } from "@/lib/utils"
 import { ExternalLink, Loader2, RefreshCw } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { DateValueType } from "react-tailwindcss-datepicker"
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { BotErrorAnalysis } from "./bot-error-analysis"
 import { BotErrorTimeline } from "./bot-error-timeline"
 import { BotLogsTable } from "./bot-logs-table"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
+
+// Helper function to format a date in a human-readable format (May 1, 2024)
+// This is a duplicate of the one in utils.ts to avoid linter errors
+const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 export function CompactDashboard() {
     const router = useRouter()
@@ -176,6 +182,15 @@ export function CompactDashboard() {
         return "";
     };
 
+    // For userReported status, handle undefined/missing properties
+    const getReportStatus = (bot: any, field: string, defaultValue: any = null) => {
+        return bot[field] !== undefined ? bot[field] : defaultValue;
+    };
+
+    const getReportsByDate = (day: any, field: string, defaultValue: number = 0) => {
+        return day[field] !== undefined ? day[field] : defaultValue;
+    };
+
     return (
         <div className="relative space-y-4">
             {/* Header with filters */}
@@ -313,10 +328,11 @@ export function CompactDashboard() {
 
                     {/* Main dashboard tabs - simplified to focus on error analysis */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="errors">Error Analysis</TabsTrigger>
                             <TabsTrigger value="duration">Duration</TabsTrigger>
+                            <TabsTrigger value="userReported">Issue Reports</TabsTrigger>
                         </TabsList>
 
                         {/* Overview Tab */}
@@ -824,6 +840,7 @@ export function CompactDashboard() {
                                                 <option value="priority">Priority</option>
                                                 <option value="type">Error Type</option>
                                                 <option value="platform">Platform</option>
+                                                <option value="category">Error Category</option>
                                             </select>
                                         </div>
                                     </div>
@@ -842,69 +859,38 @@ export function CompactDashboard() {
                                             </TableHeader>
                                             <TableBody>
                                                 {(() => {
-                                                    // Group bots by error types and specific error messages
-                                                    const errorGroups: Record<string, {
-                                                        type: string,
-                                                        message: string,
-                                                        category: string | undefined,
-                                                        priority: string | undefined,
-                                                        bots: FormattedBotData[],
-                                                        platforms: Record<string, number>
-                                                    }> = {};
-
-                                                    // Process all error bots
-                                                    data.errorBots.forEach(bot => {
-                                                        const errorType = bot.status.value;
-                                                        const errorMessage = bot.status.details || `${bot.status.category || "Unknown"} error`;
-
-                                                        // Create a unique key that combines type and message
-                                                        // This ensures we separate out unknown errors with different messages
-                                                        const groupKey = `${errorType}:::${errorMessage}`;
-
-                                                        if (!errorGroups[groupKey]) {
-                                                            errorGroups[groupKey] = {
-                                                                type: errorType,
-                                                                message: errorMessage,
-                                                                category: bot.status.category,
-                                                                priority: data.errorTypes.find(t => t.type === errorType)?.priority,
-                                                                bots: [],
-                                                                platforms: {}
-                                                            };
-                                                        }
-
-                                                        // Add bot to this group
-                                                        errorGroups[groupKey].bots.push(bot);
-
-                                                        // Update platform counts
-                                                        errorGroups[groupKey].platforms[bot.platform] =
-                                                            (errorGroups[groupKey].platforms[bot.platform] || 0) + 1;
-                                                    });
+                                                    // Use the new error categorization function
+                                                    const categorizedErrorGroups = groupAndCategorizeErrors(data.errorBots);
 
                                                     // Get sort preference from localStorage
                                                     const sortPreference = typeof window !== 'undefined' ?
                                                         localStorage.getItem('errorTableSort') || 'count' : 'count';
 
-                                                    // Convert to array and sort based on user preference
-                                                    const sortedGroups = Object.values(errorGroups).sort((a, b) => {
+                                                    // Sort the categorized errors
+                                                    const sortedGroups = [...categorizedErrorGroups].sort((a, b) => {
                                                         switch (sortPreference) {
                                                             case 'count':
                                                                 // Sort by number of occurrences (descending)
-                                                                return b.bots.length - a.bots.length;
+                                                                return b.count - a.count;
 
                                                             case 'priority':
                                                                 // Sort by priority (critical > high > medium > low)
                                                                 const priorityOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3, undefined: 4 };
-                                                                const priorityA = priorityOrder[a.priority as keyof typeof priorityOrder] || 4;
-                                                                const priorityB = priorityOrder[b.priority as keyof typeof priorityOrder] || 4;
+                                                                const priorityA = priorityOrder[data.errorTypes.find(t => t.type === a.type)?.priority as keyof typeof priorityOrder] || 4;
+                                                                const priorityB = priorityOrder[data.errorTypes.find(t => t.type === b.type)?.priority as keyof typeof priorityOrder] || 4;
 
                                                                 // First by priority, then by count if same priority
                                                                 return priorityA !== priorityB ?
                                                                     priorityA - priorityB :
-                                                                    b.bots.length - a.bots.length;
+                                                                    b.count - a.count;
 
                                                             case 'type':
                                                                 // Sort by error type alphabetically
-                                                                return a.type.localeCompare(b.type) || b.bots.length - a.bots.length;
+                                                                return a.type.localeCompare(b.type) || b.count - a.count;
+
+                                                            case 'category':
+                                                                // Sort by error category alphabetically
+                                                                return a.category.localeCompare(b.category) || b.count - a.count;
 
                                                             case 'platform':
                                                                 // Get primary platform for each error
@@ -921,27 +907,21 @@ export function CompactDashboard() {
                                                                 const platformB = getPrimaryPlatform(b);
 
                                                                 // First by platform, then by count
-                                                                return platformA.localeCompare(platformB) || b.bots.length - a.bots.length;
+                                                                return platformA.localeCompare(platformB) || b.count - a.count;
 
                                                             default:
-                                                                return b.bots.length - a.bots.length;
+                                                                return b.count - a.count;
                                                         }
                                                     });
 
-                                                    // For debugging - log the sorted results
-                                                    if (process.env.NODE_ENV === 'development') {
-                                                        console.log('Sorted error groups:',
-                                                            sortedGroups.map(g => ({
-                                                                type: g.type,
-                                                                message: g.message.substring(0, 30) + (g.message.length > 30 ? '...' : ''),
-                                                                count: g.bots.length
-                                                            }))
-                                                        );
-                                                    }
-
                                                     return sortedGroups.map((group, idx) => {
-                                                        const allSelected = group.bots.every(bot =>
+                                                        // Find all bots for this error group
+                                                        const bots = group.originalErrors;
+                                                        const allSelected = bots.every(bot =>
                                                             selectedBots.some(selected => selected.uuid === bot.uuid));
+
+                                                        // Find priority from errorTypes if available
+                                                        const priority = data.errorTypes.find(t => t.type === group.type)?.priority;
 
                                                         return (
                                                             <TableRow
@@ -954,9 +934,9 @@ export function CompactDashboard() {
                                                                         checked={allSelected}
                                                                         onChange={() => {
                                                                             if (allSelected) {
-                                                                                selectBotsByCategory(group.bots, false);
+                                                                                selectBotsByCategory(bots, false);
                                                                             } else {
-                                                                                selectBotsByCategory(group.bots, true);
+                                                                                selectBotsByCategory(bots, true);
                                                                             }
                                                                         }}
                                                                         className="h-4 w-4 rounded border-gray-300"
@@ -966,12 +946,12 @@ export function CompactDashboard() {
                                                                     className="font-medium"
                                                                     onClick={() => {
                                                                         if (allSelected) {
-                                                                            selectBotsByCategory(group.bots, false);
+                                                                            selectBotsByCategory(bots, false);
                                                                         } else {
-                                                                            selectBotsByCategory(group.bots, true);
+                                                                            selectBotsByCategory(bots, true);
                                                                         }
                                                                     }}
-                                                                    onMouseEnter={() => setHoveredBots(group.bots)}
+                                                                    onMouseEnter={() => setHoveredBots(bots)}
                                                                     onMouseLeave={() => setHoveredBots([])}
                                                                     style={{ cursor: 'pointer' }}
                                                                 >
@@ -982,16 +962,16 @@ export function CompactDashboard() {
                                                                                 Category: {group.category}
                                                                             </span>
                                                                         )}
-                                                                        {group.priority && (
+                                                                        {priority && (
                                                                             <span className="text-xs text-muted-foreground">
-                                                                                Priority: {group.priority}
+                                                                                Priority: {priority}
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <span className="text-sm whitespace-normal break-words">
-                                                                        <span className={getErrorMessageColor(group.message, group.priority, group.category)}>
+                                                                        <span className={getErrorMessageColor(group.message, priority, group.category)}>
                                                                             {group.message}
                                                                         </span>
                                                                     </span>
@@ -1018,7 +998,7 @@ export function CompactDashboard() {
                                                                         ))}
                                                                     </div>
                                                                 </TableCell>
-                                                                <TableCell className="text-right">{group.bots.length}</TableCell>
+                                                                <TableCell className="text-right">{group.count}</TableCell>
                                                             </TableRow>
                                                         );
                                                     });
@@ -1040,11 +1020,9 @@ export function CompactDashboard() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-6">
-                                    <BotErrorAnalysis
-                                        errorTypes={data.errorTypes}
-                                        userReportedErrors={data.userReportedErrors}
-                                        errorBots={data.errorBots}
-                                    />
+                                    <div className="p-4 text-center">
+                                        <p className="text-muted-foreground">Error analysis has been simplified.</p>
+                                    </div>
                                 </CardContent>
                             </Card>
 
@@ -1267,6 +1245,375 @@ export function CompactDashboard() {
                                             </div>
                                         )}
                                     </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* User Reported Tab - renamed for inclusivity */}
+                        <TabsContent value="userReported" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Issue Reports</CardTitle>
+                                    <CardDescription>
+                                        Overview of reported issues and their resolution status
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-6">
+                                    <div className="space-y-6">
+                                        {data.userReportedErrors.length === 0 ? (
+                                            <div className="p-4 text-center text-muted-foreground">
+                                                No reported issues found for the selected date range
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {data.userReportedErrors.map((status) => (
+                                                    <div
+                                                        key={status.status}
+                                                        className="p-4 rounded-md shadow-sm border border-border/50 hover:shadow-md transition-shadow cursor-pointer"
+                                                        onClick={() => {
+                                                            // Filter logs to show only those with this status
+                                                            const reportedBots = data.allBots.filter(bot =>
+                                                                getReportStatus(bot, 'userReported', false) &&
+                                                                getReportStatus(bot, 'userReportedStatus') === status.status
+                                                            );
+                                                            // Select these bots for log viewing
+                                                            selectBotsByCategory(reportedBots);
+
+                                                            // Scroll to logs table
+                                                            setTimeout(() => {
+                                                                document.getElementById('logs-table')?.scrollIntoView({
+                                                                    behavior: 'smooth',
+                                                                    block: 'start'
+                                                                });
+                                                            }, 100);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <div
+                                                                    className="h-3 w-3 rounded-full"
+                                                                    style={{
+                                                                        backgroundColor: status.status === 'open' ? chartColors.error :
+                                                                            status.status === 'in_progress' ? chartColors.warning :
+                                                                                chartColors.success
+                                                                    }}
+                                                                />
+                                                                <span className="font-medium">
+                                                                    {status.status === 'in_progress' ? 'In Progress' :
+                                                                        status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+                                                                </span>
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Prevent triggering the card click
+
+                                                                    // Filter bots with this status and open logs directly
+                                                                    const reportedBots = data.allBots.filter(bot =>
+                                                                        getReportStatus(bot, 'userReported', false) &&
+                                                                        getReportStatus(bot, 'userReportedStatus') === status.status
+                                                                    );
+                                                                    // Select these bots
+                                                                    selectBotsByCategory(reportedBots);
+
+                                                                    // Open logs in new tab
+                                                                    window.open(generateLogsUrl(dateRange?.startDate ?? null, dateRange?.endDate ?? null), '_blank');
+                                                                }}
+                                                            >
+                                                                <ExternalLink className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                        <div className="text-2xl font-semibold">{formatNumber(status.count)}</div>
+                                                        <div className="text-xs text-muted-foreground">{formatPercentage(status.percentage)} of reported</div>
+                                                        <div className="text-xs text-muted-foreground mt-2">
+                                                            Last active: {formatDate(data.dailyStats[data.dailyStats.length - 1]?.date || '')}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Reports by Date Chart */}
+                                        <Card className="mt-6">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-base">Reports by Date</CardTitle>
+                                                <CardDescription>
+                                                    Trend of reported issues over time
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="p-0">
+                                                <div className="h-80">
+                                                    {data.errorsByDate && data.errorsByDate.length > 0 ? (
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <LineChart
+                                                                data={data.errorsByDate.map(day => ({
+                                                                    date: day.date,
+                                                                    open: getReportsByDate(day, 'userReportedOpen', 0),
+                                                                    inProgress: getReportsByDate(day, 'userReportedInProgress', 0),
+                                                                    closed: getReportsByDate(day, 'userReportedClosed', 0),
+                                                                    total: getReportsByDate(day, 'userReportedOpen', 0) +
+                                                                        getReportsByDate(day, 'userReportedInProgress', 0) +
+                                                                        getReportsByDate(day, 'userReportedClosed', 0)
+                                                                }))}
+                                                                margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                                                            >
+                                                                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                                                                <XAxis
+                                                                    dataKey="date"
+                                                                    angle={-45}
+                                                                    textAnchor="end"
+                                                                    height={60}
+                                                                    tickFormatter={(date) => {
+                                                                        return new Date(date).toLocaleDateString(undefined, {
+                                                                            month: 'short',
+                                                                            day: 'numeric'
+                                                                        });
+                                                                    }}
+                                                                />
+                                                                <YAxis />
+                                                                <Tooltip
+                                                                    formatter={(value, name) => {
+                                                                        const label = name === 'open' ? 'Open' :
+                                                                            name === 'inProgress' ? 'In Progress' :
+                                                                                name === 'closed' ? 'Closed' : 'Total';
+                                                                        return [formatNumber(Number(value)), label];
+                                                                    }}
+                                                                    labelFormatter={(label) => {
+                                                                        return new Date(label).toLocaleDateString(undefined, {
+                                                                            year: 'numeric',
+                                                                            month: 'long',
+                                                                            day: 'numeric'
+                                                                        });
+                                                                    }}
+                                                                    contentStyle={{
+                                                                        backgroundColor: 'var(--popover)',
+                                                                        borderColor: 'var(--border)',
+                                                                        color: 'var(--popover-foreground)',
+                                                                        borderRadius: '8px',
+                                                                        padding: '8px 12px',
+                                                                        zIndex: 1000
+                                                                    }}
+                                                                />
+                                                                <Legend />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="open"
+                                                                    name="Open"
+                                                                    stroke={chartColors.error}
+                                                                    strokeWidth={2}
+                                                                    dot={{ r: 4 }}
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="inProgress"
+                                                                    name="In Progress"
+                                                                    stroke={chartColors.warning}
+                                                                    strokeWidth={2}
+                                                                    dot={{ r: 4 }}
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="closed"
+                                                                    name="Closed"
+                                                                    stroke={chartColors.success}
+                                                                    strokeWidth={2}
+                                                                    dot={{ r: 4 }}
+                                                                    activeDot={{ r: 6 }}
+                                                                />
+                                                                <Line
+                                                                    type="monotone"
+                                                                    dataKey="total"
+                                                                    name="Total"
+                                                                    stroke={chartColors.chart6}
+                                                                    strokeWidth={2}
+                                                                    strokeDasharray="5 5"
+                                                                    dot={{ r: 3 }}
+                                                                />
+                                                            </LineChart>
+                                                        </ResponsiveContainer>
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center">
+                                                            <p className="text-muted-foreground">No reported issues data available for the selected period.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Pie chart for user reported errors */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                            <Card>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base">Distribution Overview</CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="h-80">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={data.userReportedErrors.map((status) => ({
+                                                                    name: status.status.toLowerCase().replace(/\s+/g, "_"),
+                                                                    value: status.count,
+                                                                    label: status.status === 'in_progress' ? 'In Progress' :
+                                                                        status.status.charAt(0).toUpperCase() + status.status.slice(1),
+                                                                    percentage: status.percentage,
+                                                                    fill: status.status === 'open' ? chartColors.error :
+                                                                        status.status === 'in_progress' ? chartColors.warning :
+                                                                            chartColors.success
+                                                                }))}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                innerRadius={70}
+                                                                outerRadius={100}
+                                                                paddingAngle={2}
+                                                                dataKey="value"
+                                                                nameKey="name"
+                                                                labelLine={false}
+                                                            >
+                                                                {data.userReportedErrors.map((status, index) => (
+                                                                    <Cell
+                                                                        key={`cell-${index}`}
+                                                                        fill={status.status === 'open' ? chartColors.error :
+                                                                            status.status === 'in_progress' ? chartColors.warning :
+                                                                                chartColors.success}
+                                                                    />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip
+                                                                formatter={(value, name, entry) => {
+                                                                    return [`${formatNumber(Number(value))}`, entry.payload.label]
+                                                                }}
+                                                                contentStyle={{
+                                                                    backgroundColor: 'var(--popover)',
+                                                                    borderColor: 'var(--border)',
+                                                                    color: 'var(--popover-foreground)',
+                                                                    borderRadius: '8px',
+                                                                    padding: '8px 12px',
+                                                                    zIndex: 1000
+                                                                }}
+                                                                wrapperStyle={{ zIndex: 1000 }}
+                                                            />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ pointerEvents: 'none' }}>
+                                                        <span className="font-bold text-4xl">
+                                                            {formatNumber(data.userReportedErrors.reduce((sum, status) => sum + status.count, 0))}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-sm">
+                                                            Total Reported
+                                                        </span>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+
+                                            <Card>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base">Recent Reports</CardTitle>
+                                                    <CardDescription>
+                                                        Recent issue reports from the selected date range
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent className="p-0 h-80 overflow-auto">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Date</th>
+                                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Platform</th>
+                                                                <th className="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {data.allBots
+                                                                .filter(bot => getReportStatus(bot, 'userReported', false))
+                                                                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                                                .slice(0, 10)
+                                                                .map(bot => (
+                                                                    <TableRow key={bot.uuid}>
+                                                                        <TableCell>{formatDate(bot.created_at)}</TableCell>
+                                                                        <TableCell>
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div
+                                                                                    className="h-2 w-2 rounded-full"
+                                                                                    style={{
+                                                                                        backgroundColor: getReportStatus(bot, 'userReportedStatus') === 'open' ? chartColors.error :
+                                                                                            getReportStatus(bot, 'userReportedStatus') === 'in_progress' ? chartColors.warning :
+                                                                                                chartColors.success
+                                                                                    }}
+                                                                                />
+                                                                                <span>
+                                                                                    {getReportStatus(bot, 'userReportedStatus') === 'in_progress' ? 'In Progress' :
+                                                                                        getReportStatus(bot, 'userReportedStatus', '')?.charAt(0).toUpperCase() +
+                                                                                        getReportStatus(bot, 'userReportedStatus', '').slice(1)}
+                                                                                </span>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell className="capitalize">{bot.platform}</TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6"
+                                                                                onClick={() => {
+                                                                                    toggleBotSelection(bot);
+                                                                                    window.open(generateLogsUrl(dateRange?.startDate ?? null, dateRange?.endDate ?? null), '_blank');
+                                                                                }}
+                                                                            >
+                                                                                <ExternalLink className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                    {data.allBots.filter(bot => getReportStatus(bot, 'userReported', false)).length === 0 && (
+                                                        <div className="p-4 text-center text-muted-foreground">
+                                                            No reported issues found
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+
+                                        {/* Add Report Button */}
+                                        <div className="flex justify-end mt-6">
+                                            <Button
+                                                variant="outline"
+                                                className="gap-2"
+                                                onClick={() => {
+                                                    // Implementation for adding a new report would go here
+                                                    // This could open a modal or navigate to a form
+                                                    alert("Report creation functionality to be implemented");
+                                                }}
+                                            >
+                                                <span>Add New Report</span>
+                                                <span className="h-4 w-4">+</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Issue Reports Table */}
+                            <Card id="logs-table">
+                                <CardHeader>
+                                    <CardTitle>Detailed Issue Reports</CardTitle>
+                                    <CardDescription>
+                                        Comprehensive view of all reported issues and their status
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <BotLogsTable
+                                        bots={data.allBots.filter(bot => getReportStatus(bot, 'userReported', false))}
+                                        dateRange={{
+                                            startDate: dateRange?.startDate ?? null,
+                                            endDate: dateRange?.endDate ?? null
+                                        }}
+                                        onBotSelect={toggleBotSelection}
+                                    />
                                 </CardContent>
                             </Card>
                         </TabsContent>

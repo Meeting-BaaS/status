@@ -141,7 +141,7 @@ export function BotLogsTable({
                         </div>
 
                         {/* Error count summary */}
-                        <div className="flex justify-between items-center p-3 border rounded-lg">
+                        {/* <div className="flex justify-between items-center p-3 border rounded-lg">
                             <div>
                                 <span className="text-sm font-medium">{errorBots.length} Total Errors</span>
                                 <p className="text-xs text-muted-foreground">
@@ -158,7 +158,7 @@ export function BotLogsTable({
                                     View Selected <ExternalLink className="h-3 w-3" />
                                 </Button>
                             )}
-                        </div>
+                        </div> */}
                     </div>
                 )}
             </CardContent>
