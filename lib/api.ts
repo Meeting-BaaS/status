@@ -1,4 +1,4 @@
-import type { BotPaginated } from "@/lib/types"
+import type { BotPaginated, DailyTokenConsumption, UserTokensResponse } from "@/lib/types"
 
 export interface FetchLogsParams {
   offset: number
@@ -42,6 +42,38 @@ export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginat
   const response = await fetch(`/api/bots/all?${queryParams.toString()}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`)
+  }
+  return response.json()
+}
+
+/**
+ * Fetches token consumption data for a specific date range.
+ * @param startDate Start date in ISO format
+ * @param endDate End date in ISO format
+ * @returns Array of daily token consumption data
+ */
+export async function fetchTokenConsumption(startDate: string, endDate: string): Promise<DailyTokenConsumption[]> {
+  const queryParams = new URLSearchParams()
+  queryParams.append("start_date", startDate)
+  queryParams.append("end_date", endDate)
+
+  // Use the same /api/ prefix pattern as the fetchBotStats function
+  const response = await fetch(`/api/bots/token-consumption?${queryParams.toString()}`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch token consumption: ${response.status} ${response.statusText}`)
+  }
+  return response.json()
+}
+
+/**
+ * Fetches current user token information.
+ * @returns User tokens data including available tokens and purchase history
+ */
+export async function fetchUserTokens(): Promise<UserTokensResponse> {
+  // Use the same /api/ prefix pattern as the fetchBotStats function
+  const response = await fetch(`/api/bots/user-tokens`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user tokens: ${response.status} ${response.statusText}`)
   }
   return response.json()
 }

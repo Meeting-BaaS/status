@@ -1,9 +1,11 @@
-import Analytics from "@/components/analytics"
+"use client"
 
-export default async function Home() {
+import { Analytics } from "@/components/analytics"
+
+export default function AnalyticsPage() {
   return (
-    <div className="m-4 md:mx-8 md:mb-8">
+    <main className="min-h-screen py-8">
       <Analytics />
-    </div>
+    </main>
   )
 }

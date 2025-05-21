@@ -133,3 +133,28 @@ export type UserReportedErrorDistribution = {
   count: number
   percentage: number
 }
+
+// Add token consumption types
+export type TokenConsumptionByService = {
+  duration: number
+  transcription_hour: number
+  transcription_byok_hour: number
+  streaming_output_hour: number
+  streaming_input_hour: number
+  recording_tokens: number
+  transcription_tokens: number
+  transcription_byok_tokens: number
+  streaming_output_tokens: number
+  streaming_input_tokens: number
+}
+
+export type DailyTokenConsumption = {
+  date: string
+  consumption_by_service: TokenConsumptionByService
+}
+
+export type UserTokensResponse = {
+  available_tokens: number
+  total_tokens_purchased: number
+  last_purchase_date: string | null
+}

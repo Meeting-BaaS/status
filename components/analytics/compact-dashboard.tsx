@@ -13,8 +13,7 @@ import { genericError } from "@/lib/errors"
 import { updateSearchParams, validateDateRange, validateFilterValues } from "@/lib/search-params"
 import type { FilterState, FormattedBotData } from "@/lib/types"
 import { formatNumber, formatPercentage, statusColors } from "@/lib/utils"
-import dayjs from "dayjs"
-import { Loader2, RefreshCw } from "lucide-react"
+import { ExternalLink, Loader2, RefreshCw } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { DateValueType } from "react-tailwindcss-datepicker"
@@ -28,7 +27,7 @@ export const DEFAULT_LIMIT = limitOptions[0].value
 export function CompactDashboard() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { selectedBots, toggleBotSelection, setHoveredBots, selectBotsByCategory } = useSelectedBots()
+    const { selectedBots, toggleBotSelection, selectBotsByCategory, setHoveredBots, hoveredBots, generateLogsUrl } = useSelectedBots()
 
     // Add distinct colors for charts
     const distinctColors = [
@@ -137,25 +136,6 @@ export function CompactDashboard() {
         return total ? (getErrorBots() / total) * 100 : 0;
     };
 
-    // Define time range options for the quick filters
-    const timeRanges = [
-        { value: "7d", label: "7 Days" },
-        { value: "14d", label: "14 Days" },
-        { value: "30d", label: "30 Days" },
-        { value: "90d", label: "90 Days" }
-    ]
-
-    // Handler for time range changes
-    const handleTimeRangeChange = (value: string) => {
-        const now = dayjs()
-        const days = parseInt(value.replace('d', ''))
-
-        setDateRange({
-            startDate: now.subtract(days, 'day').toDate(),
-            endDate: now.toDate()
-        })
-    }
-
     // Define notable error patterns that should be highlighted
     const notableErrorPatterns = [
         "meeting ended before",
@@ -231,42 +211,42 @@ export function CompactDashboard() {
                 </div>
             </div>
 
-            {/* Filters component */}
-            <div className="flex items-center justify-between">
-                <Filters
-                    filters={filters}
-                    setFilters={setFilters}
-                    dateRange={dateRange}
-                    setDateRange={setDateRange}
-                    limit={limit}
-                    setLimit={setLimit}
-                    isRefetching={isRefetching}
-                />
+            {/* Filters component with selected bots button */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex-grow">
+                    <Filters
+                        filters={filters}
+                        setFilters={setFilters}
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        limit={limit}
+                        setLimit={setLimit}
+                        isRefetching={isRefetching}
+                    />
+                </div>
 
-                <div className="flex gap-2 ml-2">
-                    {/* Quick time range filters */}
-                    <div className="hidden md:flex items-center gap-1">
-                        {timeRanges.map((range) => (
-                            <Button
-                                key={range.value}
-                                variant="outline"
-                                size="sm"
-                                className={`text-xs ${dateRange?.startDate && dateRange.endDate &&
-                                    dayjs(dateRange.endDate).diff(dayjs(dateRange.startDate), 'day') === parseInt(range.value.replace('d', '')) - 1
-                                    ? 'bg-primary/10'
-                                    : ''}`}
-                                onClick={() => handleTimeRangeChange(range.value)}
-                            >
-                                {range.label}
-                            </Button>
-                        ))}
-                    </div>
+                <div className="flex items-center gap-2">
+                    {/* Selected bots button - inline version */}
+                    <Button
+                        variant={selectedBots.length > 0 ? "default" : "outline"}
+                        size="sm"
+                        className={`flex items-center gap-1 min-w-[180px] h-10 ${selectedBots.length > 0 ? "" : "text-muted-foreground"}`}
+                        onClick={() => window.open(generateLogsUrl(dateRange?.startDate ?? null, dateRange?.endDate ?? null), '_blank')}
+                    >
+                        <span className="font-semibold">
+                            {selectedBots.length > 0
+                                ? `${selectedBots.length} ${selectedBots.length === 1 ? 'Bot' : 'Bots'}`
+                                : "View All Logs"}
+                        </span>
+                        <ExternalLink className="h-4 w-4 ml-1" />
+                    </Button>
+
                     <Button
                         variant="outline"
                         size="icon"
                         onClick={handleRefresh}
                         disabled={isRefetching}
-                        className="ml-2"
+                        className="h-10 w-10"
                     >
                         <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
                     </Button>
@@ -353,7 +333,7 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[300px] flex items-center justify-center">
+                                    <CardContent className="h-[350px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
@@ -363,7 +343,7 @@ export function CompactDashboard() {
                                                         align="center"
                                                         wrapperStyle={{
                                                             paddingTop: '10px',
-                                                            fontSize: '12px',
+                                                            fontSize: '11px',
                                                             fontWeight: 500
                                                         }}
                                                         formatter={(value, entry) => {
@@ -386,23 +366,37 @@ export function CompactDashboard() {
                                                         dataKey="value"
                                                         stroke="#1e1e22"
                                                         strokeWidth={2}
-                                                        label={({ name, percent, value }) => (
-                                                            <text
-                                                                x={0}
-                                                                y={0}
-                                                                fill="#000"
-                                                                textAnchor="middle"
-                                                                dominantBaseline="central"
-                                                                style={{
-                                                                    fontSize: '11px',
-                                                                    fontWeight: 500,
-                                                                    textShadow: '0px 0px 2px rgba(255, 255, 255, 0.5)'
-                                                                }}
-                                                            >
-                                                                {`${name}: ${formatNumber(value)} (${(percent * 100).toFixed(1)}%)`}
-                                                            </text>
-                                                        )}
-                                                        labelLine={true}
+                                                        label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                                                            // Calculate the position for the extended label
+                                                            const RADIAN = Math.PI / 180;
+                                                            const radius = outerRadius + 25;
+                                                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                                                            // Determine text anchor based on position
+                                                            const textAnchor = x > cx ? 'start' : 'end';
+
+                                                            return (
+                                                                <text
+                                                                    x={x}
+                                                                    y={y}
+                                                                    fill="var(--foreground)"
+                                                                    textAnchor={textAnchor}
+                                                                    dominantBaseline="central"
+                                                                    style={{
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 500,
+                                                                    }}
+                                                                >
+                                                                    {`${name.length > 35 ? name.substring(0, 32) + '...' : name}: ${(percent * 100).toFixed(1)}%`}
+                                                                </text>
+                                                            );
+                                                        }}
+                                                        labelLine={{
+                                                            stroke: 'var(--muted-foreground)',
+                                                            strokeWidth: 1,
+                                                            strokeDasharray: '3,3'
+                                                        }}
                                                         onClick={(entry, index) => {
                                                             // Find bots with this platform and select them
                                                             const platform = entry.platform;
@@ -499,7 +493,7 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[300px] flex items-center justify-center">
+                                    <CardContent className="h-[350px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
@@ -509,7 +503,7 @@ export function CompactDashboard() {
                                                         align="center"
                                                         wrapperStyle={{
                                                             paddingTop: '10px',
-                                                            fontSize: '12px',
+                                                            fontSize: '11px',
                                                             fontWeight: 500
                                                         }}
                                                         formatter={(value, entry) => {
@@ -533,23 +527,41 @@ export function CompactDashboard() {
                                                         dataKey="value"
                                                         stroke="#1e1e22"
                                                         strokeWidth={2}
-                                                        label={({ name, percent, value }) => (
-                                                            <text
-                                                                x={0}
-                                                                y={0}
-                                                                fill="#000"
-                                                                textAnchor="middle"
-                                                                dominantBaseline="central"
-                                                                style={{
-                                                                    fontSize: '11px',
-                                                                    fontWeight: 500,
-                                                                    textShadow: '0px 0px 2px rgba(255, 255, 255, 0.5)'
-                                                                }}
-                                                            >
-                                                                {`${name.length > 10 ? name.substring(0, 8) + '...' : name}: ${value}`}
-                                                            </text>
-                                                        )}
-                                                        labelLine={true}
+                                                        label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                                                            // Calculate the position for the extended label
+                                                            const RADIAN = Math.PI / 180;
+                                                            const radius = outerRadius + 25;
+                                                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                                                            // Determine text anchor based on position
+                                                            const textAnchor = x > cx ? 'start' : 'end';
+
+                                                            // Calculate the percentage of total errors
+                                                            const totalErrors = getErrorBots();
+                                                            const percentage = totalErrors > 0 ? (value / totalErrors) * 100 : 0;
+
+                                                            return (
+                                                                <text
+                                                                    x={x}
+                                                                    y={y}
+                                                                    fill="var(--foreground)"
+                                                                    textAnchor={textAnchor}
+                                                                    dominantBaseline="central"
+                                                                    style={{
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 500,
+                                                                    }}
+                                                                >
+                                                                    {`${name.length > 35 ? name.substring(0, 32) + '...' : name}: ${percentage.toFixed(1)}%`}
+                                                                </text>
+                                                            );
+                                                        }}
+                                                        labelLine={{
+                                                            stroke: 'var(--muted-foreground)',
+                                                            strokeWidth: 1,
+                                                            strokeDasharray: '3,3'
+                                                        }}
                                                         onClick={(entry, index) => {
                                                             // Find bots with this error type and select them
                                                             const errorType = entry.errorType;
@@ -652,7 +664,7 @@ export function CompactDashboard() {
                                             </div>
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="h-[300px] flex items-center justify-center">
+                                    <CardContent className="h-[350px] flex items-center justify-center">
                                         <div className="w-full h-full relative">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
@@ -662,7 +674,7 @@ export function CompactDashboard() {
                                                         align="center"
                                                         wrapperStyle={{
                                                             paddingTop: '10px',
-                                                            fontSize: '12px',
+                                                            fontSize: '11px',
                                                             fontWeight: 500
                                                         }}
                                                         formatter={(value, entry) => {
@@ -695,23 +707,41 @@ export function CompactDashboard() {
                                                                 dataKey="value"
                                                                 stroke="#1e1e22"
                                                                 strokeWidth={2}
-                                                                label={({ name, percent, value }) => (
-                                                                    <text
-                                                                        x={0}
-                                                                        y={0}
-                                                                        fill="#000"
-                                                                        textAnchor="middle"
-                                                                        dominantBaseline="central"
-                                                                        style={{
-                                                                            fontSize: '11px',
-                                                                            fontWeight: 500,
-                                                                            textShadow: '0px 0px 2px rgba(255, 255, 255, 0.5)'
-                                                                        }}
-                                                                    >
-                                                                        {`${name}: ${value}`}
-                                                                    </text>
-                                                                )}
-                                                                labelLine={true}
+                                                                label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                                                                    // Calculate the position for the extended label
+                                                                    const RADIAN = Math.PI / 180;
+                                                                    const radius = outerRadius + 25;
+                                                                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                                                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                                                                    // Determine text anchor based on position
+                                                                    const textAnchor = x > cx ? 'start' : 'end';
+
+                                                                    // Calculate the percentage of total errors
+                                                                    const totalErrorsOnPlatforms = errorPlatformData.reduce((sum, item) => sum + item.value, 0);
+                                                                    const percentage = totalErrorsOnPlatforms > 0 ? (value / totalErrorsOnPlatforms) * 100 : 0;
+
+                                                                    return (
+                                                                        <text
+                                                                            x={x}
+                                                                            y={y}
+                                                                            fill="var(--foreground)"
+                                                                            textAnchor={textAnchor}
+                                                                            dominantBaseline="central"
+                                                                            style={{
+                                                                                fontSize: '11px',
+                                                                                fontWeight: 500,
+                                                                            }}
+                                                                        >
+                                                                            {`${name.length > 35 ? name.substring(0, 32) + '...' : name}: ${percentage.toFixed(1)}%`}
+                                                                        </text>
+                                                                    );
+                                                                }}
+                                                                labelLine={{
+                                                                    stroke: 'var(--muted-foreground)',
+                                                                    strokeWidth: 1,
+                                                                    strokeDasharray: '3,3'
+                                                                }}
                                                                 onClick={(entry, index) => {
                                                                     // Find error bots with this platform and select them
                                                                     const platform = entry.platform;
@@ -1291,7 +1321,7 @@ export function CompactDashboard() {
                 />
             )}
 
-            {/* Floating UI for selected bots */}
+            {/* Floating UI for selected bots - keep this for detailed view */}
             <SelectedBotsButton
                 dateRange={{
                     startDate: dateRange?.startDate ?? null,
