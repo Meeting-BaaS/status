@@ -23,7 +23,7 @@ export default async function UsagePage({
 }) {
   const { payment } = await searchParams
   return (
-    <div className="m-4 md:mx-8 md:mb-8">
+    <div className="m-4 md:mx-16 md:my-8">
       <Usage paymentStatus={payment} />
     </div>
   )
