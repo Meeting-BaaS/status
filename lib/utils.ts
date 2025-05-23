@@ -20,6 +20,18 @@ export function formatNumber(value: number): string {
 }
 
 /**
+ * Formats a float number with one decimal place (truncated) and thousands separators.
+ * Only shows decimal place for non-whole numbers.
+ */
+export function formatFloat(value: number): string {
+  const truncated = Math.floor(value * 10) / 10
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: Number.isInteger(truncated) ? 0 : 1,
+    maximumFractionDigits: 1
+  }).format(truncated)
+}
+
+/**
  * Formats a percentage value with one decimal place
  */
 export function formatPercentage(value: number): string {

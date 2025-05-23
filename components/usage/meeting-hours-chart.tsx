@@ -10,7 +10,7 @@ import {
 } from "recharts"
 import type { TooltipProps as RechartsTooltipProps } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
-import { formatNumber } from "@/lib/utils"
+import { formatFloat } from "@/lib/utils"
 import type { ChartData } from "@/lib/types"
 import dayjs from "dayjs"
 
@@ -44,7 +44,7 @@ function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
                 style={{ backgroundColor: chartItem?.color || item.color }}
               />
               <span>{chartItem?.label || key}</span>
-              <span className="ml-auto font-medium">{formatNumber(Number(item.value))} hours</span>
+              <span className="ml-auto font-medium">{formatFloat(Number(item.value))} hours</span>
             </div>
           )
         })}

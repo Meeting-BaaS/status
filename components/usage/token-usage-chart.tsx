@@ -10,7 +10,7 @@ import {
 } from "recharts"
 import type { TooltipProps as RechartsTooltipProps } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
-import { formatNumber } from "@/lib/utils"
+import { formatFloat } from "@/lib/utils"
 import type { ChartData } from "@/lib/types"
 import dayjs from "dayjs"
 
@@ -54,14 +54,14 @@ function TokenUsageTooltip(props: RechartsTooltipProps<number, string>) {
                 style={{ backgroundColor: chartItem?.color || item.color }}
               />
               <span>{chartItem?.label || key}</span>
-              <span className="ml-auto font-medium">{formatNumber(Number(item.value))}</span>
+              <span className="ml-auto font-medium">{formatFloat(Number(item.value))}</span>
             </div>
           )
         })}
         <div className="mt-2 border-t pt-1">
           <div className="flex items-center justify-between font-medium text-xs">
             <span>Total</span>
-            <span>{formatNumber(total)}</span>
+            <span>{formatFloat(total)}</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn, formatDate, formatNumber, formatPlanType, getProgressBarColors } from "@/lib/utils"
+import { cn, formatDate, formatFloat, formatPlanType, getProgressBarColors } from "@/lib/utils"
 import { motion } from "motion/react"
 import type { SubscriptionPlanType } from "@/lib/types"
 import { Badge } from "../ui/badge"
@@ -64,7 +64,7 @@ export function AvailableTokensCard({
             }}
             className={cn("font-bold text-3xl", colors.text)}
           >
-            {formatNumber(availableTokens)}
+            {formatFloat(availableTokens)}
           </motion.div>
           <div className="pb-0.5 text-muted-foreground">tokens remaining</div>
         </div>
@@ -81,8 +81,8 @@ export function AvailableTokensCard({
           />
         </div>
         <p className="mt-2 text-muted-foreground text-sm">
-          {formatNumber(totalTokensPurchased - availableTokens)} of{" "}
-          {formatNumber(totalTokensPurchased)} tokens used
+          {formatFloat(totalTokensPurchased - availableTokens)} of{" "}
+          {formatFloat(totalTokensPurchased)} tokens used
         </p>
         {availableTokens < 8 && (
           <motion.p
