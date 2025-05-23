@@ -1,9 +1,9 @@
 import {
-    allErrorCategories,
-    allErrorPriorities,
-    allPlatforms,
-    allStatuses,
-    allUserReportedErrorStatuses
+  allErrorCategories,
+  allErrorPriorities,
+  allPlatforms,
+  allStatuses,
+  allUserReportedErrorStatuses
 } from "@/lib/filter-options"
 import type { FilterState } from "@/lib/types"
 import dayjs from "dayjs"
@@ -133,27 +133,33 @@ export function dateToUtcString(date: Date | null): string | null {
   return dayjs(date).utc().format()
 }
 
+export function updateDateRangeSearchParams(
+  currentParams: URLSearchParams,
+  dateRange: DateValueType
+): URLSearchParams {
+  const newParams = new URLSearchParams(currentParams.toString())
+
+  // Update date range params. Only set if both dates are valid.
+  const startDateUtc = dateToUtcString(dateRange?.startDate ?? null)
+  const endDateUtc = dateToUtcString(dateRange?.endDate ?? null)
+  if (startDateUtc && endDateUtc) {
+    newParams.set("startDate", startDateUtc)
+    newParams.set("endDate", endDateUtc)
+  } else {
+    newParams.delete("startDate")
+    newParams.delete("endDate")
+  }
+
+  return newParams
+}
+
 // Update URL search params with current filter state and date range
 export function updateSearchParams(
   currentParams: URLSearchParams,
   dateRange: DateValueType,
   filters: FilterState
 ): URLSearchParams {
-  const params = new URLSearchParams(currentParams.toString())
-
-  const startDateUtc = dateToUtcString(dateRange?.startDate ?? null)
-  if (startDateUtc) {
-    params.set("startDate", startDateUtc)
-  } else {
-    params.delete("startDate")
-  }
-
-  const endDateUtc = dateToUtcString(dateRange?.endDate ?? null)
-  if (endDateUtc) {
-    params.set("endDate", endDateUtc)
-  } else {
-    params.delete("endDate")
-  }
+  const params = updateDateRangeSearchParams(currentParams, dateRange)
 
   const searchValues = filterStateToSearchValues(filters)
 
@@ -179,19 +185,13 @@ export function updateSearchParams(
   }
 
   if (searchValues.errorCategoryFilters.length > 0) {
-    params.set(
-      "errorCategoryFilters",
-      searchValues.errorCategoryFilters.join(",")
-    )
+    params.set("errorCategoryFilters", searchValues.errorCategoryFilters.join(","))
   } else {
     params.delete("errorCategoryFilters")
   }
 
   if (searchValues.errorPriorityFilters.length > 0) {
-    params.set(
-      "errorPriorityFilters",
-      searchValues.errorPriorityFilters.join(",")
-    )
+    params.set("errorPriorityFilters", searchValues.errorPriorityFilters.join(","))
   } else {
     params.delete("errorPriorityFilters")
   }

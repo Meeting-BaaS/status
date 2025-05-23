@@ -1,7 +1,9 @@
-import { ClassValue, clsx } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import dayjs from "dayjs"
 import { twMerge } from "tailwind-merge"
-import type { PlatformName } from "./types"
+import type { PlatformName, SubscriptionPlanType } from "./types"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 
 /**
  * Combines class names with Tailwind CSS using clsx and twMerge
@@ -27,22 +29,22 @@ export function formatPercentage(value: number): string {
 /**
  * Formats a date in a human-readable format (May 1, 2024)
  */
-export function formatDate(dateString: string): string {
-  return dayjs(dateString).format("MMM D, YYYY")
+export const formatDate = (dateString: string) => {
+  return dayjs.utc(dateString).local().format("D MMM YYYY")
 }
 
 /**
  * Formats a date range as a string (May 1 - May 21, 2024)
  */
 export function formatDateRange(startDate: string, endDate: string): string {
-  return `${dayjs(startDate).format("MMM D")} - ${dayjs(endDate).format("MMM D, YYYY")}`
+  return `${dayjs.utc(startDate).local().format("D MMM YYYY")} - ${dayjs.utc(endDate).local().format("D MMM YYYY")}`
 }
 
 /**
  * Formats a date string to be used in URL parameters (YYYY-MM-DD)
  */
 export function formatDateString(date: Date): string {
-  return dayjs(date).format("YYYY-MM-DD")
+  return dayjs.utc(date).local().format("YYYY-MM-DD")
 }
 
 /**
@@ -69,7 +71,9 @@ export function capitalize(str: string): string {
  * Creates a random ID string
  */
 export function generateId(length = 8): string {
-  return Math.random().toString(36).substring(2, 2 + length)
+  return Math.random()
+    .toString(36)
+    .substring(2, 2 + length)
 }
 
 /**
@@ -102,8 +106,8 @@ export function getChartColorVars(config: Record<string, { color: string }>) {
 // Status colors using CSS variables for consistency
 export const statusColors = {
   success: "var(--color-success, #78FFF0)", // Primary teal
-  error: "var(--color-error, #FE1B4E)",     // Error red
-  warning: "var(--color-warning, #FFFF93)"  // Warning yellow
+  error: "var(--color-error, #FE1B4E)", // Error red
+  warning: "var(--color-warning, #FFFF93)" // Warning yellow
 }
 
 /**
@@ -118,60 +122,64 @@ export const statusColors = {
  * @param category The original error category
  * @returns An object with normalized error information
  */
-export function categorizeError(errorType: string, errorMessage: string, category?: string): {
-  normalizedType: string;
-  normalizedMessage: string;
-  normalizedCategory: string;
-  originalType: string;
-  originalMessage: string;
-  originalCategory?: string;
-  groupKey: string;
+export function categorizeError(
+  errorType: string,
+  errorMessage: string,
+  category?: string
+): {
+  normalizedType: string
+  normalizedMessage: string
+  normalizedCategory: string
+  originalType: string
+  originalMessage: string
+  originalCategory?: string
+  groupKey: string
 } {
-  let normalizedType = errorType;
-  let normalizedMessage = errorMessage;
-  let normalizedCategory = category || 'unknown_error';
-  let groupKey = '';
+  let normalizedType = errorType
+  let normalizedMessage = errorMessage
+  let normalizedCategory = category || "unknown_error"
+  let groupKey = ""
 
   // Only categorize webhook errors and stalled errors, keep everything else as-is
-  
+
   // Webhook error normalization - simply group by status code
-  if (category === 'webhook_error' && errorMessage.includes('Status:')) {
-    const statusMatch = errorMessage.match(/Status: (\d+)/);
+  if (category === "webhook_error" && errorMessage.includes("Status:")) {
+    const statusMatch = errorMessage.match(/Status: (\d+)/)
     if (statusMatch && statusMatch[1]) {
-      const statusCode = parseInt(statusMatch[1], 10);
-      normalizedMessage = `Status: ${statusCode} - ${errorMessage}`;
-      groupKey = `webhook_error:${statusCode}`;
+      const statusCode = parseInt(statusMatch[1], 10)
+      normalizedMessage = `Status: ${statusCode} - ${errorMessage}`
+      groupKey = `webhook_error:${statusCode}`
     } else {
-      groupKey = `webhook_error:${errorType}`;
+      groupKey = `webhook_error:${errorType}`
     }
-  } 
+  }
   // Group all webhook builder errors
-  else if (category === 'webhook_error' && errorMessage.includes('builder error')) {
-    normalizedType = "Webhook Error";
-    normalizedMessage = "URL Configuration Error";
-    groupKey = "webhook_builder_error";
+  else if (category === "webhook_error" && errorMessage.includes("builder error")) {
+    normalizedType = "Webhook Error"
+    normalizedMessage = "URL Configuration Error"
+    groupKey = "webhook_builder_error"
   }
   // Group stalled bots by timeframe
-  else if (category === 'stalled_error') {
-    const hoursMatch = errorMessage.match(/pending for (\d+\.?\d*) hours/);
+  else if (category === "stalled_error") {
+    const hoursMatch = errorMessage.match(/pending for (\d+\.?\d*) hours/)
     if (hoursMatch && hoursMatch[1]) {
-      const hours = parseFloat(hoursMatch[1]);
+      const hours = parseFloat(hoursMatch[1])
       if (hours < 24) {
-        groupKey = "stalled_under_24h";
+        groupKey = "stalled_under_24h"
       } else if (hours < 48) {
-        groupKey = "stalled_24_to_48h";
+        groupKey = "stalled_24_to_48h"
       } else {
-        groupKey = "stalled_over_48h";
+        groupKey = "stalled_over_48h"
       }
     } else {
-      groupKey = `stalled_error:${errorType}`;
+      groupKey = `stalled_error:${errorType}`
     }
   }
   // Default - keep everything else as is
   else {
-    groupKey = `${normalizedCategory}:${normalizedType}`;
+    groupKey = `${normalizedCategory}:${normalizedType}`
   }
-  
+
   return {
     normalizedType,
     normalizedMessage,
@@ -180,7 +188,7 @@ export function categorizeError(errorType: string, errorMessage: string, categor
     originalMessage: errorMessage,
     originalCategory: category,
     groupKey
-  };
+  }
 }
 
 /**
@@ -190,48 +198,80 @@ export function categorizeError(errorType: string, errorMessage: string, categor
  * @returns Grouped and categorized errors
  */
 export function groupAndCategorizeErrors(errors: any[]) {
-  const errorGroups: Record<string, {
-    type: string;
-    message: string;
-    category: string;
-    count: number;
-    platforms: Record<string, number>;
-    originalErrors: any[];
-  }> = {};
+  const errorGroups: Record<
+    string,
+    {
+      type: string
+      message: string
+      category: string
+      count: number
+      platforms: Record<string, number>
+      originalErrors: any[]
+    }
+  > = {}
 
-  errors.forEach(error => {
-    const errorType = error.status?.value || 'Unknown';
-    const errorMessage = error.status?.details || `${error.status?.category || "Unknown"} error`;
-    const errorCategory = error.status?.category;
-    const platform = error.platform || 'unknown';
+  errors.forEach((error) => {
+    const errorType = error.status?.value || "Unknown"
+    const errorMessage = error.status?.details || `${error.status?.category || "Unknown"} error`
+    const errorCategory = error.status?.category
+    const platform = error.platform || "unknown"
 
     // Only apply categorization to webhook errors and stalled errors - simple KISS approach
-    let groupKey = `${errorCategory}:${errorType}`;
-    if (errorCategory === 'webhook_error' || errorCategory === 'stalled_error') {
-      const categorized = categorizeError(errorType, errorMessage, errorCategory);
-      groupKey = categorized.groupKey;
+    let groupKey = `${errorCategory}:${errorType}`
+    if (errorCategory === "webhook_error" || errorCategory === "stalled_error") {
+      const categorized = categorizeError(errorType, errorMessage, errorCategory)
+      groupKey = categorized.groupKey
     }
-    
+
     // Use the groupKey to identify similar errors
     if (!errorGroups[groupKey]) {
       errorGroups[groupKey] = {
         type: errorType,
         message: errorMessage,
-        category: errorCategory || 'unknown_error',
+        category: errorCategory || "unknown_error",
         count: 0,
         platforms: {},
         originalErrors: []
-      };
+      }
     }
 
     // Increment counters
-    errorGroups[groupKey].count++;
-    errorGroups[groupKey].platforms[platform] = 
-      (errorGroups[groupKey].platforms[platform] || 0) + 1;
-    
-    // Store original error for reference
-    errorGroups[groupKey].originalErrors.push(error);
-  });
+    errorGroups[groupKey].count++
+    errorGroups[groupKey].platforms[platform] = (errorGroups[groupKey].platforms[platform] || 0) + 1
 
-  return Object.values(errorGroups).sort((a, b) => b.count - a.count);
+    // Store original error for reference
+    errorGroups[groupKey].originalErrors.push(error)
+  })
+
+  return Object.values(errorGroups).sort((a, b) => b.count - a.count)
+}
+
+export const formatPlanType = (planType: SubscriptionPlanType): string => {
+  const formattedPlanType = planType
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim()
+  return `Current plan: ${formattedPlanType}`
+}
+
+export const getProgressBarColors = (availableTokens: number) => {
+  if (availableTokens < 5) {
+    return {
+      main: "bg-destructive",
+      bg: "bg-destructive/10",
+      text: "text-destructive"
+    }
+  }
+  if (availableTokens < 8) {
+    return {
+      main: "bg-amber-500 dark:bg-baas-warning-500",
+      bg: "bg-amber-500/10 dark:bg-baas-warning-500/10",
+      text: "text-amber-500 dark:text-baas-warning-500"
+    }
+  }
+  return {
+    main: "bg-primary",
+    bg: "bg-primary/10",
+    text: "text-primary"
+  }
 }

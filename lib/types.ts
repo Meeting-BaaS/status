@@ -3,9 +3,9 @@ export type StatusType = "success" | "error" | "pending" | "warning"
 export type UserReportedErrorStatus = "open" | "closed" | "in_progress"
 
 // Error categories from Rust implementation
-export type ErrorCategory = 
+export type ErrorCategory =
   | "system_error"
-  | "auth_error" 
+  | "auth_error"
   | "capacity_error"
   | "connection_error"
   | "permission_error"
@@ -155,6 +155,47 @@ export type DailyTokenConsumption = {
 
 export type UserTokensResponse = {
   available_tokens: number
-  total_tokens_purchased: number
+  total_tokens_purchased: number | undefined
   last_purchase_date: string | null
+}
+
+export type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "incomplete"
+  | "incomplete_expired"
+  | "past_due"
+  | "paused"
+  | "trialing"
+  | "unpaid"
+
+export type SubscriptionPlanType =
+  | "PayAsYouGo"
+  | "StarterPack"
+  | "ProPack"
+  | "BusinessPack"
+  | "EnterprisePack"
+  | "ScaleAPI"
+  | "EnterpriseAPI"
+
+export type SubscriptionResponse = {
+  subscription: {
+    email: string
+    product: SubscriptionPlanType
+    stripePlanId: string | null
+    stripeProductId: string | null
+    stripeSubscriptionStatus: SubscriptionStatus | null
+    trialEnd: string | null
+  }
+}
+
+export type ChartData = {
+  date: string
+  recording: number
+  transcription: number
+  streaming: number
+  duration: number
+  transcription_hour: number
+  streaming_input_hour: number
+  streaming_output_hour: number
 }
