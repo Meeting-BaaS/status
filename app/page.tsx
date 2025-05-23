@@ -1,11 +1,9 @@
-"use client"
-
 import { Analytics } from "@/components/analytics"
 
 export default function AnalyticsPage() {
   return (
-    <main className="min-h-screen py-8">
+    <div className="m-4 md:mx-8 md:mb-8">
       <Analytics />
-    </main>
+    </div>
   )
 }
