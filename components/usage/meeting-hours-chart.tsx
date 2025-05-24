@@ -28,7 +28,7 @@ interface MeetingHoursChartProps {
 function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload, label } = props
 
-  if (!active || !payload?.length) return null
+  if (!active || !payload?.length || !label) return null
 
   return (
     <div className="rounded-lg border bg-background p-2 shadow-sm">
@@ -37,6 +37,8 @@ function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
         {payload.map((item, index) => {
           const key = item.dataKey as keyof typeof chartConfig
           const chartItem = chartConfig[key]
+          const value = Number(item.value)
+          const formattedValue = Number.isNaN(value) ? "0" : formatFloat(value)
           return (
             <div key={`item-${index}`} className="flex items-center gap-2 text-xs">
               <div
@@ -44,7 +46,7 @@ function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
                 style={{ backgroundColor: chartItem?.color || item.color }}
               />
               <span>{chartItem?.label || key}</span>
-              <span className="ml-auto font-medium">{formatFloat(Number(item.value))} hours</span>
+              <span className="ml-auto font-medium">{formattedValue} hours</span>
             </div>
           )
         })}

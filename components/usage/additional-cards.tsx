@@ -54,7 +54,10 @@ export function AdditionalCards({ data, dateRangeFormatted }: AdditionalCardsPro
         </CardHeader>
         <CardContent className="flex grow flex-col justify-end gap-2">
           <div className="font-bold text-4xl">
-            {(chartData.reduce((sum, day) => sum + day.duration, 0) / 3600).toFixed(1)}
+            {(chartData?.length > 0
+              ? chartData.reduce((sum, day) => sum + (day.duration || 0), 0) / 3600
+              : 0
+            ).toFixed(1)}
           </div>
           <p className="mt-0.5 text-muted-foreground text-sm">
             Hours of meetings recorded in this period

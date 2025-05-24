@@ -22,16 +22,11 @@ export function AvailableTokensCard({
   lastPurchaseDate,
   planType
 }: AvailableTokensCardProps) {
-  if (!totalTokensPurchased) {
-    // If no tokens purchased, set to default
-    totalTokensPurchased = defaultTotalTokens
-  } else {
-    // Add default tokens to the total tokens purchased
-    totalTokensPurchased = totalTokensPurchased + defaultTotalTokens
-  }
+  const calculatedTotal = (totalTokensPurchased || 0) + defaultTotalTokens
+
   // Calculate the percentage of tokens used
-  const percentage =
-    ((totalTokensPurchased - availableTokens) / Math.max(totalTokensPurchased, 1)) * 100
+  const tokensUsed = Math.max(0, calculatedTotal - availableTokens)
+  const percentage = (tokensUsed / Math.max(calculatedTotal, 1)) * 100
 
   const colors = getProgressBarColors(availableTokens)
 
@@ -81,8 +76,7 @@ export function AvailableTokensCard({
           />
         </div>
         <p className="mt-2 text-muted-foreground text-sm">
-          {formatFloat(totalTokensPurchased - availableTokens)} of{" "}
-          {formatFloat(totalTokensPurchased)} tokens used
+          {formatFloat(tokensUsed)} of {formatFloat(calculatedTotal)} tokens used
         </p>
         {availableTokens < 8 && (
           <motion.p

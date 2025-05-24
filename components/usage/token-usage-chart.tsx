@@ -36,9 +36,12 @@ interface TokenUsageChartProps {
 function TokenUsageTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload, label } = props
 
-  if (!active || !payload?.length) return null
+  if (!active || !payload?.length || !label) return null
 
-  const total = payload.reduce((sum, item) => sum + Number(item.value), 0)
+  const total = payload.reduce((sum, item) => {
+    const value = Number(item.value)
+    return sum + (Number.isNaN(value) ? 0 : value)
+  }, 0)
 
   return (
     <div className="rounded-lg border bg-background p-2 shadow-sm">
