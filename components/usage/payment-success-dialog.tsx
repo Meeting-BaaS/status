@@ -40,7 +40,10 @@ export function PaymentSuccessDialog({ open, onOpenChange }: PaymentSuccessDialo
             <CheckCircle2 className="h-5 w-5 text-green-500" />
             <DialogTitle>Payment Successful</DialogTitle>
           </div>
-          <DialogDescription>Your payment has been processed successfully.</DialogDescription>
+          <DialogDescription>
+            Your payment has been processed successfully. It could take up to 10 minutes to reflect
+            in your account.
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>

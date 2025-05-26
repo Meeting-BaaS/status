@@ -260,7 +260,8 @@ export function groupAndCategorizeErrors(errors: any[]) {
 
 export const formatPlanType = (planType: SubscriptionPlanType): string => {
   const formattedPlanType = planType
-    .replace(/([A-Z])/g, " $1")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/^./, (str) => str.toUpperCase())
     .trim()
   return `Current plan: ${formattedPlanType}`

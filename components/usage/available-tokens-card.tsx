@@ -35,11 +35,13 @@ export function AvailableTokensCard({
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
           Available Tokens
-          <Badge variant="default" className="hover:bg-primary/15" asChild>
-            <Link href={BILLING_URL} target="_blank" rel="noopener noreferrer">
-              Upgrade Plan
-            </Link>
-          </Badge>
+          {planType !== "EnterpriseAPI" && (
+            <Badge variant="default" className="hover:bg-primary/15" asChild>
+              <Link href={BILLING_URL} target="_blank" rel="noopener noreferrer">
+                Upgrade Plan
+              </Link>
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           {formatPlanType(planType)}
