@@ -18,20 +18,53 @@ import {
 import { scaleOrdinal } from "d3-scale"
 import { schemeTableau10 } from "d3-scale-chromatic"
 import dayjs from "dayjs"
+import type { TimelineEntry } from "@/lib/types"
 
 interface ErrorTimelineCardProps {
-  timelineData: Array<{
-    date: string
-    total: number
-    priorities: Array<{
-      priority: string
-      count: number
-    }>
-  }>
+  timelineData: TimelineEntry[]
+}
+
+function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload, label } = props
+
+  if (!active || !payload?.length) return null
+
+  // Filter out the total line from the main entries
+  const priorityEntries = payload.filter((entry) => entry.name !== "Total")
+  const totalEntry = payload.find((entry) => entry.name === "Total")
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
+      <div className="space-y-1">
+        {priorityEntries.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-2 text-xs">
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color as string }}
+            />
+            <span className="capitalize">{entry.name}</span>
+            <span className="ml-auto font-medium">{formatNumber(entry.value as number)}</span>
+          </div>
+        ))}
+        <div className="mt-1 border-t pt-1">
+          <div className="flex items-center gap-2 text-xs">
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: "var(--destructive)" }}
+            />
+            <span className="capitalize">Total</span>
+            <span className="ml-auto font-medium">
+              {formatNumber((totalEntry?.value as number) || 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
-  console.log("timelineData", timelineData)
   // Get all unique priorities from the timeline data
   const priorities = useMemo(() => {
     const uniquePriorities = new Set<string>()
@@ -78,46 +111,6 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
       return transformedDay
     })
   }, [timelineData])
-
-  function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload, label } = props
-
-    if (!active || !payload?.length) return null
-
-    // Filter out the total line from the main entries
-    const priorityEntries = payload.filter((entry) => entry.name !== "Total")
-    const totalEntry = payload.find((entry) => entry.name === "Total")
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
-        <div className="space-y-1">
-          {priorityEntries.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2 text-xs">
-              <div
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: entry.color as string }}
-              />
-              <span className="capitalize">{entry.name}</span>
-              <span className="ml-auto font-medium">{formatNumber(entry.value as number)}</span>
-            </div>
-          ))}
-          <div className="mt-1 border-t pt-1">
-            <div className="flex items-center gap-2 text-xs">
-              <div
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: "var(--destructive)" }}
-              />
-              <span className="capitalize">Total</span>
-              <span className="ml-auto font-medium">
-                {formatNumber((totalEntry?.value as number) || 0)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <Card className="dark:bg-baas-black">

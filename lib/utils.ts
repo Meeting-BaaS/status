@@ -1,8 +1,9 @@
 import { type ClassValue, clsx } from "clsx"
 import dayjs from "dayjs"
 import { twMerge } from "tailwind-merge"
-import type { PlatformName, SubscriptionPlanType } from "./types"
+import type { FormattedBotData, PlatformName, SubscriptionPlanType } from "@/lib/types"
 import utc from "dayjs/plugin/utc"
+import { countBy, sumBy } from "lodash-es"
 dayjs.extend(utc)
 
 /**
@@ -46,222 +47,11 @@ export const formatDate = (dateString: string) => {
 }
 
 /**
- * Formats a date range as a string (May 1 - May 21, 2024)
+ * Formats a duration in minutes
  */
-export function formatDateRange(startDate: string, endDate: string): string {
-  return `${dayjs.utc(startDate).local().format("D MMM YYYY")} - ${dayjs.utc(endDate).local().format("D MMM YYYY")}`
-}
-
-/**
- * Formats a date string to be used in URL parameters (YYYY-MM-DD)
- */
-export function formatDateString(date: Date): string {
-  return dayjs.utc(date).local().format("YYYY-MM-DD")
-}
-
-/**
- * Color values for different meeting platforms
- */
-export const platformColors: Record<PlatformName | string, string> = {
-  "google meet": "hsl(var(--chart-1))",
-  zoom: "hsl(var(--chart-2))",
-  teams: "hsl(var(--chart-3))",
-  unknown: "hsl(var(--chart-4))"
-}
-
-/**
- * Capitalizes the first letter of each word in a string
- */
-export function capitalize(str: string): string {
-  return str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ")
-}
-
-/**
- * Creates a random ID string
- */
-export function generateId(length = 8): string {
-  return Math.random()
-    .toString(36)
-    .substring(2, 2 + length)
-}
-
-// Format duration in minutes
 export const formatDuration = (value: number) => {
   const minutes = Math.round(value / 60)
   return `${formatNumber(minutes)}m`
-}
-
-/**
- * Returns a color based on status type
- */
-export function getStatusColor(status: string): string {
-  switch (status.toLowerCase()) {
-    case "success":
-      return "hsl(var(--success))"
-    case "error":
-      return "hsl(var(--destructive))"
-    case "warning":
-      return "hsl(var(--warning))"
-    case "pending":
-      return "hsl(var(--muted))"
-    default:
-      return "hsl(var(--muted-foreground))"
-  }
-}
-
-// Chart utility functions
-export function getChartColorVars(config: Record<string, { color: string }>) {
-  return Object.entries(config).reduce((acc, [key, value]) => {
-    return Object.assign(acc, {
-      [`--color-${key}`]: value.color
-    })
-  }, {})
-}
-
-// Status colors using CSS variables for consistency
-export const statusColors = {
-  success: "var(--color-success, #78FFF0)", // Primary teal
-  error: "var(--color-error, #FE1B4E)", // Error red
-  warning: "var(--color-warning, #FFFF93)" // Warning yellow
-}
-
-/**
- * Error categorization utilities to group similar errors for analysis
- */
-
-/**
- * Groups similar error messages into more meaningful categories
- * Only applies to very specific cases (webhooks and stalled errors)
- * @param errorType The original error type
- * @param errorMessage The original error message
- * @param category The original error category
- * @returns An object with normalized error information
- */
-export function categorizeError(
-  errorType: string,
-  errorMessage: string,
-  category?: string
-): {
-  normalizedType: string
-  normalizedMessage: string
-  normalizedCategory: string
-  originalType: string
-  originalMessage: string
-  originalCategory?: string
-  groupKey: string
-} {
-  let normalizedType = errorType
-  let normalizedMessage = errorMessage
-  let normalizedCategory = category || "unknown_error"
-  let groupKey = ""
-
-  // Only categorize webhook errors and stalled errors, keep everything else as-is
-
-  // Webhook error normalization - simply group by status code
-  if (category === "webhook_error" && errorMessage.includes("Status:")) {
-    const statusMatch = errorMessage.match(/Status: (\d+)/)
-    if (statusMatch && statusMatch[1]) {
-      const statusCode = parseInt(statusMatch[1], 10)
-      normalizedMessage = `Status: ${statusCode} - ${errorMessage}`
-      groupKey = `webhook_error:${statusCode}`
-    } else {
-      groupKey = `webhook_error:${errorType}`
-    }
-  }
-  // Group all webhook builder errors
-  else if (category === "webhook_error" && errorMessage.includes("builder error")) {
-    normalizedType = "Webhook Error"
-    normalizedMessage = "URL Configuration Error"
-    groupKey = "webhook_builder_error"
-  }
-  // Group stalled bots by timeframe
-  else if (category === "stalled_error") {
-    const hoursMatch = errorMessage.match(/pending for (\d+\.?\d*) hours/)
-    if (hoursMatch && hoursMatch[1]) {
-      const hours = parseFloat(hoursMatch[1])
-      if (hours < 24) {
-        groupKey = "stalled_under_24h"
-      } else if (hours < 48) {
-        groupKey = "stalled_24_to_48h"
-      } else {
-        groupKey = "stalled_over_48h"
-      }
-    } else {
-      groupKey = `stalled_error:${errorType}`
-    }
-  }
-  // Default - keep everything else as is
-  else {
-    groupKey = `${normalizedCategory}:${normalizedType}`
-  }
-
-  return {
-    normalizedType,
-    normalizedMessage,
-    normalizedCategory,
-    originalType: errorType,
-    originalMessage: errorMessage,
-    originalCategory: category,
-    groupKey
-  }
-}
-
-/**
- * Groups an array of error objects by their normalized categories
- * Only applies special grouping to webhooks and stalled errors
- * @param errors Array of error objects with status info
- * @returns Grouped and categorized errors
- */
-export function groupAndCategorizeErrors(errors: any[]) {
-  const errorGroups: Record<
-    string,
-    {
-      type: string
-      message: string
-      category: string
-      count: number
-      platforms: Record<string, number>
-      originalErrors: any[]
-    }
-  > = {}
-
-  errors.forEach((error) => {
-    const errorType = error.status?.value || "Unknown"
-    const errorMessage = error.status?.details || `${error.status?.category || "Unknown"} error`
-    const errorCategory = error.status?.category
-    const platform = error.platform || "unknown"
-
-    // Only apply categorization to webhook errors and stalled errors - simple KISS approach
-    let groupKey = `${errorCategory}:${errorType}`
-    if (errorCategory === "webhook_error" || errorCategory === "stalled_error") {
-      const categorized = categorizeError(errorType, errorMessage, errorCategory)
-      groupKey = categorized.groupKey
-    }
-
-    // Use the groupKey to identify similar errors
-    if (!errorGroups[groupKey]) {
-      errorGroups[groupKey] = {
-        type: errorType,
-        message: errorMessage,
-        category: errorCategory || "unknown_error",
-        count: 0,
-        platforms: {},
-        originalErrors: []
-      }
-    }
-
-    // Increment counters
-    errorGroups[groupKey].count++
-    errorGroups[groupKey].platforms[platform] = (errorGroups[groupKey].platforms[platform] || 0) + 1
-
-    // Store original error for reference
-    errorGroups[groupKey].originalErrors.push(error)
-  })
-
-  return Object.values(errorGroups).sort((a, b) => b.count - a.count)
 }
 
 export const formatPlanType = (planType: SubscriptionPlanType): string => {
@@ -295,7 +85,7 @@ export const getProgressBarColors = (availableTokens: number) => {
   }
 }
 
-export function getErrorMessageColor(message: string, priority?: string, category?: string) {
+export function getErrorMessageColor(priority?: string) {
   if (priority === "critical") return "text-destructive"
   if (priority === "high") return "text-amber-500"
   return "text-foreground"
@@ -321,4 +111,97 @@ export function getPriorityForError(category?: string): string {
     default:
       return "medium"
   }
+}
+
+export function getErrorPlatformDistribution(
+  bots: FormattedBotData[]
+): Record<PlatformName, number> {
+  const platformCounts = countBy(bots, "platform")
+  return Object.fromEntries(
+    Object.entries(platformCounts).map(([platform, count]) => [platform as PlatformName, count])
+  ) as Record<PlatformName, number>
+}
+
+export function extractWebhookStatus(details?: string | null): string | null {
+  if (!details) return null
+  const statusMatch = details.match(/Status: (\d+)/)
+  return statusMatch?.[1] || null
+}
+
+export function extractStalledHours(details?: string | null): number | null {
+  if (!details) return null
+  const hoursMatch = details.match(/pending for (\d+\.?\d*) hours/)
+  return hoursMatch?.[1] ? Number.parseFloat(hoursMatch[1]) : null
+}
+
+export function getStalledErrorType(hours: number): string {
+  if (hours < 24) return "Stalled (< 24h)"
+  if (hours < 48) return "Stalled (24-48h)"
+  return "Stalled (> 48h)"
+}
+
+/**
+ * Get all unique dates from an array of bots
+ */
+export function getUniqueDates(bots: FormattedBotData[]): string[] {
+  return Array.from(new Set(bots.map((bot) => dayjs(bot.created_at).format("YYYY-MM-DD")))).sort()
+}
+
+/**
+ * Get all unique priorities from error bots
+ */
+export function getUniquePriorities(bots: FormattedBotData[]): string[] {
+  return Array.from(
+    new Set(
+      bots
+        .filter((bot) => ["error", "warning"].includes(bot.status.type.toLowerCase()))
+        .map((bot) => getPriorityForError(bot.status.category || "unknown_error"))
+    )
+  )
+}
+
+/**
+ * Calculate average duration from an array of bots
+ */
+export function calculateAverageDuration(bots: FormattedBotData[]): number {
+  const botsWithDuration = bots.filter((bot) => bot.duration && bot.duration > 0)
+  if (botsWithDuration.length === 0) return 0
+  return sumBy(botsWithDuration, "duration") / botsWithDuration.length
+}
+
+/**
+ * Get bots with valid duration
+ */
+export function getBotsWithDuration(bots: FormattedBotData[]): FormattedBotData[] {
+  return bots.filter((bot) => bot.duration && bot.duration > 0)
+}
+
+export const platformGradients = {
+  zoom: {
+    start: "var(--platform-zoom-start)",
+    middle: "var(--platform-zoom-middle)",
+    end: "var(--platform-zoom-end)"
+  },
+  teams: {
+    start: "var(--platform-teams-start)",
+    middle: "var(--platform-teams-middle)",
+    end: "var(--platform-teams-end)"
+  },
+  "google-meet": {
+    start: "var(--platform-google-meet-start)",
+    middle: "var(--platform-google-meet-middle)",
+    end: "var(--platform-google-meet-end)"
+  },
+  unknown: {
+    start: "var(--platform-unknown-start)",
+    middle: "var(--platform-unknown-middle)",
+    end: "var(--platform-unknown-end)"
+  }
+}
+
+export const platformColors = {
+  zoom: platformGradients.zoom.middle,
+  teams: platformGradients.teams.middle,
+  "google meet": platformGradients["google-meet"].middle,
+  unknown: platformGradients.unknown.middle
 }

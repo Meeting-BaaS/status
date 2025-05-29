@@ -11,18 +11,19 @@ import {
 import type { TooltipProps as RechartsTooltipProps } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatFloat } from "@/lib/utils"
-import type { ChartData } from "@/lib/types"
+import type { ConsumptionChartData } from "@/lib/types"
 import dayjs from "dayjs"
+import { schemeCategory10 } from "d3-scale-chromatic"
 
 const chartConfig = {
   duration: {
     label: "Hours",
-    color: "var(--chart-4)"
+    color: schemeCategory10[0]
   }
 } as const
 
 interface MeetingHoursChartProps {
-  data: ChartData[]
+  data: ConsumptionChartData[]
 }
 
 function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
@@ -77,7 +78,7 @@ export function MeetingHoursChart({ data }: MeetingHoursChartProps) {
             <Line
               type="monotone"
               dataKey="duration"
-              stroke="var(--chart-4)"
+              stroke={schemeCategory10[0]}
               strokeWidth={2}
               dot={false}
             />

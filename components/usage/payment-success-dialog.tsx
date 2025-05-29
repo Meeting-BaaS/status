@@ -11,7 +11,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "../ui/button"
+import { Button } from "@/components/ui/button"
 
 interface PaymentSuccessDialogProps {
   open: boolean

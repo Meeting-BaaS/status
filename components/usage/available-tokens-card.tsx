@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn, formatDate, formatFloat, formatPlanType, getProgressBarColors } from "@/lib/utils"
 import { motion } from "motion/react"
 import type { SubscriptionPlanType } from "@/lib/types"
-import { Badge } from "../ui/badge"
+import { Badge } from "@/components/ui/badge"
 import { BILLING_URL } from "@/lib/external-urls"
 import Link from "next/link"
 

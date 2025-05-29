@@ -3,8 +3,8 @@ import { DateRangeFilter } from "@/components/filters/date-range-filter"
 import type { FilterState } from "@/lib/types"
 import { Loader2, RefreshCw } from "lucide-react"
 import type { DateRangeType } from "react-tailwindcss-datepicker"
-import { LimitSelector } from "./limit-selector"
-import { Button } from "../ui/button"
+import { LimitSelector } from "@/components/filters/limit-selector"
+import { Button } from "@/components/ui/button"
 
 interface FiltersProps {
   filters: FilterState

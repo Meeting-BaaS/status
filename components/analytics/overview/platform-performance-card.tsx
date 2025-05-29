@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
-import { formatNumber } from "@/lib/utils"
+import { formatNumber, platformColors } from "@/lib/utils"
 import { useMemo } from "react"
 import {
   Cell,
@@ -12,7 +12,7 @@ import {
   Tooltip,
   type TooltipProps as RechartsTooltipProps
 } from "recharts"
-import { AnimatedNumber } from "../ui/animated-number"
+import { AnimatedNumber } from "@/components/ui/animated-number"
 
 interface PlatformPerformanceCardProps {
   platformDistribution: Array<{
@@ -28,14 +28,53 @@ interface PlatformPerformanceCardProps {
   }>
 }
 
-const platformColors = {
-  zoom: "#4d8cff",
-  teams: "#7a7fd1",
-  "google meet": "#22c55e",
-  unknown: "#76b7b2"
-}
+const otherStatus = "var(--other-status)"
 
-const otherStatus = "#a0a0a0"
+function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload } = props
+
+  if (!active || !payload?.length) return null
+
+  const data = payload[0].payload
+  if (!data.statusDistribution) return null
+
+  const total = Object.values(data.statusDistribution).reduce(
+    (sum: number, stats) => sum + (stats as { count: number }).count,
+    0
+  )
+
+  return (
+    <div className="rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm capitalize">{data.platform}</p>
+      <div className="space-y-1">
+        {Object.entries(data.statusDistribution).map(([status, stats]) => {
+          const typedStats = stats as { count: number; percentage: number }
+          return (
+            <div key={status} className="flex items-center gap-2 text-xs">
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{
+                  backgroundColor:
+                    status === "success"
+                      ? platformColors[data.platform.toLowerCase() as keyof typeof platformColors]
+                      : "transparent"
+                }}
+              />
+              <span className="capitalize">{status}</span>
+              <span className="ml-auto font-medium">{formatNumber(typedStats.count)}</span>
+            </div>
+          )
+        })}
+        <div className="mt-2 border-t pt-1">
+          <div className="flex items-center justify-between font-medium text-xs">
+            <span>Total</span>
+            <span>{formatNumber(total)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function PlatformPerformanceCard({ platformDistribution }: PlatformPerformanceCardProps) {
   const chartData = useMemo(() => {
@@ -77,52 +116,6 @@ export function PlatformPerformanceCard({ platformDistribution }: PlatformPerfor
       {} as Record<string, { label: string; color: string }>
     )
   }, [platformDistribution])
-
-  function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload } = props
-
-    if (!active || !payload?.length) return null
-
-    const data = payload[0].payload
-    if (!data.statusDistribution) return null
-
-    const total = Object.values(data.statusDistribution).reduce(
-      (sum: number, stats) => sum + (stats as { count: number }).count,
-      0
-    )
-
-    return (
-      <div className="rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm capitalize">{data.platform}</p>
-        <div className="space-y-1">
-          {Object.entries(data.statusDistribution).map(([status, stats]) => {
-            const typedStats = stats as { count: number; percentage: number }
-            return (
-              <div key={status} className="flex items-center gap-2 text-xs">
-                <div
-                  className="h-2 w-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      status === "success"
-                        ? platformColors[data.platform.toLowerCase() as keyof typeof platformColors]
-                        : "transparent"
-                  }}
-                />
-                <span className="capitalize">{status}</span>
-                <span className="ml-auto font-medium">{formatNumber(typedStats.count)}</span>
-              </div>
-            )
-          })}
-          <div className="mt-2 border-t pt-1">
-            <div className="flex items-center justify-between font-medium text-xs">
-              <span>Total</span>
-              <span>{formatNumber(total)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <Card className="w-full md:w-1/2 dark:bg-baas-black">

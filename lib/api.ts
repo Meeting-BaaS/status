@@ -45,7 +45,7 @@ export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginat
   if (params.user_reported_status)
     queryParams.append("user_reported_status", params.user_reported_status)
 
-  const response = await fetch(`/api/bots/all?${queryParams.toString()}`)
+  const response = await fetch(`/api/baas/bots/all?${queryParams.toString()}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`)
   }
@@ -70,7 +70,7 @@ export async function fetchTokenConsumption(
   queryParams.append("start_date", params.start_date)
   queryParams.append("end_date", params.end_date)
 
-  const response = await fetch(`/api/bots/token_consumption?${queryParams.toString()}`)
+  const response = await fetch(`/api/baas/bots/token_consumption?${queryParams.toString()}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch token consumption: ${response.status} ${response.statusText}`)
   }
@@ -82,7 +82,7 @@ export async function fetchTokenConsumption(
  * @returns User tokens data including available tokens and purchase history
  */
 export async function fetchUserTokens(): Promise<UserTokensResponse> {
-  const response = await fetch("/api/accounts/user_tokens")
+  const response = await fetch("/api/baas/accounts/user_tokens")
   if (!response.ok) {
     throw new Error(`Failed to fetch user tokens: ${response.status} ${response.statusText}`)
   }
@@ -90,7 +90,7 @@ export async function fetchUserTokens(): Promise<UserTokensResponse> {
 }
 
 export async function fetchSubscriptionsInfo(): Promise<SubscriptionResponse> {
-  const response = await fetch("/api/payment/subscriptions_infos")
+  const response = await fetch("/api/baas/payment/subscriptions_infos")
   if (!response.ok) {
     throw new Error(`Failed to fetch subscription info: ${response.status} ${response.statusText}`)
   }

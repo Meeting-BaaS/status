@@ -16,23 +16,18 @@ import {
   type TooltipProps as RechartsTooltipProps,
   Legend
 } from "recharts"
+import type { IssueReportTimelineEntry } from "@/lib/types"
 
 interface IssueTimelineCardProps {
-  timelineData: Array<{
-    date: string
-    open: number
-    in_progress: number
-    closed: number
-  }>
+  timelineData: IssueReportTimelineEntry[]
+  statusColors: {
+    open: string
+    in_progress: string
+    closed: string
+  }
 }
 
-const statusColors = {
-  open: "var(--destructive)",
-  in_progress: "var(--baas-warning-500)",
-  closed: "var(--primary)"
-}
-
-export function IssueTimelineCard({ timelineData }: IssueTimelineCardProps) {
+export function IssueTimelineCard({ timelineData, statusColors }: IssueTimelineCardProps) {
   // Chart configuration
   const chartConfig = useMemo(() => {
     return {
@@ -49,7 +44,7 @@ export function IssueTimelineCard({ timelineData }: IssueTimelineCardProps) {
         color: statusColors.closed
       }
     }
-  }, [])
+  }, [statusColors])
 
   function IssueTimelineTooltip(props: RechartsTooltipProps<number, string>) {
     const { active, payload } = props

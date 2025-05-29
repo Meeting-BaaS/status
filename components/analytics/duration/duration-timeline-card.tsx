@@ -12,20 +12,44 @@ import {
   XAxis,
   YAxis,
   Legend,
-  CartesianGrid,
-  type TooltipProps as RechartsTooltipProps
+  type TooltipProps as RechartsTooltipProps,
+  CartesianGrid
 } from "recharts"
 import dayjs from "dayjs"
 import { scaleOrdinal } from "d3-scale"
 import { schemePaired } from "d3-scale-chromatic"
+import type { DurationTimelineEntry } from "@/lib/types"
 
 interface DurationTimelineCardProps {
-  durationTimelineData: Array<{
-    date: string
-    averageDuration: number
-    totalDuration: number
-    botCount: number
-  }>
+  durationTimelineData: DurationTimelineEntry[]
+}
+
+function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload, label } = props
+
+  if (!active || !payload?.length) return null
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
+      <div className="space-y-1">
+        {payload.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-2 text-xs">
+            <div
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color as string }}
+            />
+            <span className="capitalize">{entry.name}</span>
+            <span className="ml-auto font-medium">
+              {entry.name === "Average Duration" || entry.name === "Total Duration"
+                ? formatDuration(entry.value as number)
+                : formatNumber(entry.value as number)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function DurationTimelineCard({ durationTimelineData }: DurationTimelineCardProps) {
@@ -44,34 +68,6 @@ export function DurationTimelineCard({ durationTimelineData }: DurationTimelineC
       botCount: { label: "Total Bots", color: colorScale("botCount") as string }
     }
   }, [colorScale])
-
-  function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload, label } = props
-
-    if (!active || !payload?.length) return null
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
-        <div className="space-y-1">
-          {payload.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2 text-xs">
-              <div
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: entry.color as string }}
-              />
-              <span className="capitalize">{entry.name}</span>
-              <span className="ml-auto font-medium">
-                {entry.name === "Average Duration" || entry.name === "Total Duration"
-                  ? formatDuration(entry.value as number)
-                  : formatNumber(entry.value as number)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <Card className="dark:bg-baas-black">

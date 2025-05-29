@@ -33,13 +33,6 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Chart colors */
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
   /* Overriding the primary color used in the datepicker component */
   --color-blue-400: var(--primary);
   --color-blue-500: var(--primary);
@@ -47,6 +40,25 @@
   --color-blue-700: var(--primary);
   --color-blue-800: var(--primary);
   --color-blue-900: var(--primary);
+
+  /* Platform colors */
+  --color-platform-zoom-start: var(--platform-zoom-start);
+  --color-platform-zoom-middle: var(--platform-zoom-middle);
+  --color-platform-zoom-end: var(--platform-zoom-end);
+
+  --color-platform-teams-start: var(--platform-teams-start);
+  --color-platform-teams-middle: var(--platform-teams-middle);
+  --color-platform-teams-end: var(--platform-teams-end);
+
+  --color-platform-google-meet-start: var(--platform-google-meet-start);
+  --color-platform-google-meet-middle: var(--platform-google-meet-middle);
+  --color-platform-google-meet-end: var(--platform-google-meet-end);
+
+  --color-platform-unknown-start: var(--platform-unknown-start);
+  --color-platform-unknown-middle: var(--platform-unknown-middle);
+  --color-platform-unknown-end: var(--platform-unknown-end);
+
+  --color-other-status: var(--other-status);
 }
 
 :root {
@@ -77,47 +89,24 @@
   --baas-primary-700: oklch(0.53 0.0548 187.47);
   --baas-black: oklch(0.26 0 0);
 
-  /* Chart colors - Light mode */
-  --chart-1: oklch(0.7 0.15 30);  /* Warm orange */
-  --chart-2: oklch(0.5 0.12 200); /* Teal */
-  --chart-3: oklch(0.3 0.08 220); /* Dark blue */
-  --chart-4: oklch(0.8 0.15 80);  /* Gold */
-  --chart-5: oklch(0.75 0.18 50); /* Orange */
+  /* Platform colors */
+  --platform-zoom-start: oklch(0.9521 0.0229 258.36);
+  --platform-zoom-middle: oklch(0.6562 0.183 261.28);
+  --platform-zoom-end: oklch(0.5462 0.2512 262.48);
 
-  /* Success and error colors */
-  --success: oklch(0.7 0.15 30);
-  --warning: oklch(0.8 0.15 80);
-  --error: oklch(0.65 0.2 350);
-  
-  /* Marine/Teal Palette variables for use in JS */
-  /* --color-chart-1: #78FFF0;
-  --color-chart-2: #6AEDDF;
-  --color-chart-3: #5CDBCF;
-  --color-chart-4: #4EC9BF;
-  --color-chart-5: #40B7AF;
-  --color-chart-6: #32A59F;
-  --color-chart-7: #24938F;
-  --color-chart-8: #16817F;
-  --color-chart-9: #086F6F;
-  --color-chart-10: #447671; */
-  
-  /* Status colors */
-  /* --color-success: #78FFF0;
-  --color-warning: #FFFF93;
-  --color-error: #FE1B4E;
-  --color-error-mid: #FE809C; */
-  
-  /* Apply to chart colors */
-  /* --chart-color-1: var(--color-chart-1);
-  --chart-color-2: var(--color-chart-2);
-  --chart-color-3: var(--color-chart-3);
-  --chart-color-4: var(--color-chart-4);
-  --chart-color-5: var(--color-chart-5);
-  --chart-color-6: var(--color-chart-6);
-  --chart-color-7: var(--color-chart-7);
-  --chart-color-8: var(--color-chart-8);
-  --chart-color-9: var(--color-chart-9);
-  --chart-color-10: var(--color-chart-10); */
+  --platform-teams-start: oklch(0.9379 0.0309 285.79);
+  --platform-teams-middle: oklch(0.6279 0.1226 279.59);
+  --platform-teams-end: oklch(0.4792 0.1651 275.02);
+
+  --platform-google-meet-start: oklch(0.9624 0.0434 156.74);
+  --platform-google-meet-middle: oklch(0.7227 0.192 149.58);
+  --platform-google-meet-end: oklch(0.4479 0.1083 151.33);
+
+  --platform-unknown-start: oklch(0.8669 0 0);
+  --platform-unknown-middle: oklch(0.7058 0 0);
+  --platform-unknown-end: oklch(0.5452 0 0);
+
+  --other-status: oklch(0.7058 0 0);
 }
 
 .dark {
@@ -135,18 +124,6 @@
   --border: var(--baas-neutral-500);
   --input: var(--baas-neutral-500);
   --ring: oklch(0.67 0.143484 235.7191);
-
-  /* Chart colors - Dark mode */
-  --chart-1: oklch(0.6 0.2 250);  /* Bright blue */
-  --chart-2: oklch(0.55 0.15 160); /* Mint */
-  --chart-3: oklch(0.65 0.2 70);   /* Amber */
-  --chart-4: oklch(0.65 0.2 300);  /* Purple */
-  --chart-5: oklch(0.65 0.2 350);  /* Pink */
-
-  /* Success and error colors */
-  --success: oklch(0.6 0.2 250);
-  --warning: oklch(0.65 0.2 70);
-  --error: oklch(0.65 0.2 350);
 }
 
 @layer base {

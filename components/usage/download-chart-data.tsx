@@ -2,10 +2,10 @@ import { CSVLink } from "react-csv"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import dayjs from "dayjs"
-import type { ChartData } from "@/lib/types"
+import type { ConsumptionChartData } from "@/lib/types"
 
 interface DownloadChartDataProps {
-  data: ChartData[]
+  data: ConsumptionChartData[]
   startDate: Date
   endDate: Date
 }

@@ -1,4 +1,4 @@
-import type { ChartData, SubscriptionResponse } from "@/lib/types"
+import type { ConsumptionChartData, SubscriptionResponse } from "@/lib/types"
 import {
   fetchSubscriptionsInfo,
   fetchTokenConsumption,
@@ -32,7 +32,7 @@ export interface ConsumptionData extends RawConsumptionData {
   totalRecordingTokens: number
   totalTranscriptionTokens: number
   totalStreamingTokens: number
-  chartData: ChartData[]
+  chartData: ConsumptionChartData[]
 }
 
 export function useConsumption({ startDate, endDate }: UseConsumptionParams) {

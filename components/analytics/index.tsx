@@ -12,14 +12,26 @@ import { useBotStats } from "@/hooks/use-bot-stats"
 import { Loader2 } from "lucide-react"
 import { genericError } from "@/lib/errors"
 import Filters from "@/components/filters"
-import { ErrorDistributionCard } from "@/components/analytics/error-distribution-card"
-import { PlatformDistributionCard } from "@/components/analytics/platform-distribution-card"
-import { PlatformPerformanceCard } from "@/components/analytics/platform-performance-card"
-import { ErrorTableCard } from "@/components/analytics/error-table-card"
 import { MainTabs } from "@/components/ui/main-tabs"
-import ErrorAnalysis from "@/components/analytics/error-analysis"
-import Duration from "@/components/analytics/duration"
-import IssueReports from "@/components/analytics/issue-reports"
+import dynamic from "next/dynamic"
+const Loading = () => (
+  <div className="flex h-96 items-center justify-center">
+    <Loader2 className="size-8 animate-spin text-primary" />
+  </div>
+)
+const Overview = dynamic(() => import("@/components/analytics/overview"), {
+  loading: Loading
+})
+const ErrorAnalysis = dynamic(() => import("@/components/analytics/error-analysis"), {
+  loading: Loading
+})
+const Duration = dynamic(() => import("@/components/analytics/duration"), {
+  loading: Loading
+})
+const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"), {
+  loading: Loading
+})
+import { cn } from "@/lib/utils"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
 
@@ -34,8 +46,6 @@ export function Analytics() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Pagination state
-  const [offset, setOffset] = useState(0)
   const [currentTab, setCurrentTab] = useState(tabs[0].id)
   const [limit, setLimit] = useState(() => {
     // Initialize from localStorage if available, otherwise use default
@@ -71,7 +81,7 @@ export function Analytics() {
   }, [dateRange, filters, router, searchParams])
 
   const { data, isLoading, isError, error, isRefetching, refetch } = useBotStats({
-    offset: offset * limit,
+    offset: 0,
     limit,
     startDate: dateRange?.startDate ?? null,
     endDate: dateRange?.endDate ?? null,
@@ -84,20 +94,13 @@ export function Analytics() {
     switch (currentTab) {
       case "overview":
         return (
-          <>
-            <div className="flex flex-col gap-4 md:flex-row">
-              <PlatformDistributionCard
-                platformDistribution={data.platformDistribution}
-                totalBots={data.allBots.length}
-              />
-              <PlatformPerformanceCard platformDistribution={data.platformDistribution} />
-            </div>
-            <ErrorDistributionCard
-              errorDistributionData={data.errorDistributionData}
-              totalErrors={data.errorBots.length}
-            />
-            <ErrorTableCard data={data.errorTableData} />
-          </>
+          <Overview
+            platformDistribution={data.platformDistribution}
+            allBots={data.allBots}
+            errorDistributionData={data.errorDistributionData}
+            errorBots={data.errorBots}
+            errorTableData={data.errorTableData}
+          />
         )
       case "error-analysis":
         return <ErrorAnalysis timelineData={data.timelineData} />
@@ -165,7 +168,9 @@ export function Analytics() {
                 tabs={tabs}
                 containerClassName="mb-4"
               />
-              <div className="space-y-4">{renderTabContent}</div>
+              <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
+                {renderTabContent}
+              </div>
             </>
           )}
         </div>

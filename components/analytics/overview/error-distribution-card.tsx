@@ -17,12 +17,35 @@ import { schemeTableau10 } from "d3-scale-chromatic"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
-import { ScrollArea } from "../ui/scroll-area"
-import { AnimatedNumber } from "../ui/animated-number"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { AnimatedNumber } from "@/components/ui/animated-number"
 
 interface ErrorDistributionCardProps {
   errorDistributionData: Array<{ name: string; value: number; percentage: number }>
   totalErrors: number
+}
+
+function ErrorDistributionTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload } = props
+
+  if (!active || !payload?.length) return null
+
+  const data = payload[0]
+  const value = Number(data.value)
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm">{data.name}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs">
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: data.payload.fill }} />
+          <span className="ml-auto font-medium">
+            {formatNumber(value)} ({formatPercentage(data.payload.percentage)})
+          </span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ErrorDistributionCard({
@@ -107,29 +130,6 @@ export function ErrorDistributionCard({
   const sortedErrorTypes = useMemo(() => {
     return [...errorDistributionData].sort((a, b) => a.name.localeCompare(b.name))
   }, [errorDistributionData])
-
-  function ErrorDistributionTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload } = props
-
-    if (!active || !payload?.length) return null
-
-    const data = payload[0]
-    const value = Number(data.value)
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm">{data.name}</p>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: data.payload.fill }} />
-            <span className="ml-auto font-medium">
-              {formatNumber(value)} ({formatPercentage(data.payload.percentage)})
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <Card className="dark:bg-baas-black">

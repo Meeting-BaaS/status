@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
-import { formatNumber } from "@/lib/utils"
+import { formatDuration, formatNumber, platformColors } from "@/lib/utils"
 import { useMemo } from "react"
 import {
   Cell,
@@ -14,29 +14,35 @@ import {
 } from "recharts"
 import { AnimatedNumber } from "@/components/ui/animated-number"
 import { motion, AnimatePresence } from "motion/react"
+import type { PlatformDurationEntry } from "@/lib/types"
 
 interface DurationPlatformCardProps {
-  platformDurationData: Array<{
-    name: string
-    value: number
-    count: number
-  }>
+  platformDurationData: PlatformDurationEntry[]
 }
 
-const platformColors = {
-  zoom: "#4d8cff",
-  teams: "#7a7fd1",
-  "google meet": "#22c55e",
-  unknown: "#76b7b2"
+function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload } = props
+
+  if (!active || !payload?.length) return null
+
+  const data = payload[0]
+  const value = Number(data.value)
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm capitalize">{data.name}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs">
+          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: data.payload.fill }} />
+          <span className="ml-auto font-medium">{formatDuration(value)}</span>
+        </div>
+        <div className="text-muted-foreground text-xs">{formatNumber(data.payload.count)} bots</div>
+      </div>
+    </div>
+  )
 }
 
 export function DurationPlatformCard({ platformDurationData }: DurationPlatformCardProps) {
-  // Format duration in minutes
-  const formatDuration = (value: number) => {
-    const minutes = Math.round(value / 60)
-    return `${formatNumber(minutes)}m`
-  }
-
   // Calculate total average duration
   const totalAverageDuration = useMemo(() => {
     const totalDuration = platformDurationData.reduce(
@@ -46,30 +52,6 @@ export function DurationPlatformCard({ platformDurationData }: DurationPlatformC
     const totalBots = platformDurationData.reduce((sum, item) => sum + item.count, 0)
     return totalDuration / totalBots
   }, [platformDurationData])
-
-  function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload } = props
-
-    if (!active || !payload?.length) return null
-
-    const data = payload[0]
-    const value = Number(data.value)
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm capitalize">{data.name}</p>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: data.payload.fill }} />
-            <span className="ml-auto font-medium">{formatDuration(value)}</span>
-          </div>
-          <div className="text-muted-foreground text-xs">
-            {formatNumber(data.payload.count)} bots
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // Chart configuration
   const chartConfig = useMemo(() => {

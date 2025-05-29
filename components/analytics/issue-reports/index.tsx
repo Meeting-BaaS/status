@@ -1,18 +1,10 @@
-import { IssueStatusCard } from "./issue-status-card"
-import { IssueTimelineCard } from "./issue-timeline-card"
+import { IssueStatusCard } from "@/components/analytics/issue-reports/issue-status-card"
+import { IssueTimelineCard } from "@/components/analytics/issue-reports/issue-timeline-card"
+import type { IssueReportData, IssueReportTimelineEntry } from "@/lib/types"
 
 interface IssueReportsProps {
-  statusCounts: {
-    open: number
-    in_progress: number
-    closed: number
-  }
-  timelineData: Array<{
-    date: string
-    open: number
-    in_progress: number
-    closed: number
-  }>
+  statusCounts: IssueReportData["statusCounts"]
+  timelineData: IssueReportTimelineEntry[]
 }
 
 const statusColors = {
@@ -47,7 +39,7 @@ export default function IssueReports({ statusCounts, timelineData }: IssueReport
           status="closed"
         />
       </div>
-      <IssueTimelineCard timelineData={timelineData} />
+      <IssueTimelineCard timelineData={timelineData} statusColors={statusColors} />
     </>
   )
 }

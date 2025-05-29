@@ -17,6 +17,12 @@ const badgeVariants = cva(
           "border-baas-warning-500/90 bg-baas-warning-500/80 text-baas-black/80 dark:border-baas-warning-500/30 dark:bg-baas-warning-500/20 dark:text-baas-warning-500",
         destructive:
           "border-destructive/30 bg-destructive/20 text-destructive",
+        zoom: "border-platform-zoom-middle/30 bg-platform-zoom-middle/20 text-platform-zoom-middle",
+        teams: "border-platform-teams-middle/30 bg-platform-teams-middle/20 text-platform-teams-middle",
+        "google-meet":
+          "border-platform-google-meet-middle/30 bg-platform-google-meet-middle/20 text-platform-google-meet-middle",
+        unknown:
+          "border-platform-unknown-middle/30 bg-platform-unknown-middle/20 text-platform-unknown-middle",
         outline:
           "text-foreground",
       },

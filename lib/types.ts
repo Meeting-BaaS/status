@@ -98,7 +98,7 @@ export type FilterState = {
   errorPriorityFilters: string[]
 }
 
-export interface PlatformDistribution {
+export type PlatformDistribution = {
   platform: string
   count: number
   percentage: number
@@ -110,37 +110,12 @@ export interface PlatformDistribution {
   }
 }
 
-export type DailyStats = {
-  date: string
-  totalBots: number
-  errorBots: number
-  platforms: {
-    [key: string]: number
-  }
-}
-
-export type ErrorType = {
-  type: string
-  count: number
-  percentage: number
-  category?: ErrorCategory
-  priority?: ErrorPriority
-}
-
-export type ErrorCategoryDistribution = {
-  category: ErrorCategory
-  count: number
-  percentage: number
-  types: ErrorType[]
-}
-
-export type UserReportedErrorDistribution = {
-  status: UserReportedErrorStatus
-  count: number
+export type ErrorDistribution = {
+  name: string
+  value: number
   percentage: number
 }
 
-// Add token consumption types
 export type TokenConsumptionByService = {
   duration: number
   transcription_hour: number
@@ -195,7 +170,7 @@ export type SubscriptionResponse = {
   }
 }
 
-export type ChartData = {
+export type ConsumptionChartData = {
   date: string
   recording: number
   transcription: number
@@ -204,4 +179,75 @@ export type ChartData = {
   transcription_hour: number
   streaming_input_hour: number
   streaming_output_hour: number
+}
+
+export type ErrorTableEntry = {
+  type: string
+  originalType: string
+  message: string
+  category: string
+  priority: ErrorPriority
+  platforms: Record<PlatformName, number>
+  count: number
+}
+
+export type WebhookErrorGroup = {
+  count: number
+  messages: string[]
+  bots: FormattedBotData[]
+}
+
+export type StalledErrorGroup = {
+  values: number[]
+  bots: FormattedBotData[]
+}
+
+export type NormalizedErrorGroup = {
+  type: string
+  message: string
+  bots: FormattedBotData[]
+}
+
+export type TimelineEntry = {
+  date: string
+  total: number
+  priorities: Array<{
+    priority: string
+    count: number
+  }>
+}
+
+export type DurationTimelineEntry = {
+  date: string
+  averageDuration: number
+  totalDuration: number
+  botCount: number
+}
+
+export type PlatformDurationEntry = {
+  name: string
+  value: number
+  count: number
+}
+
+export type DurationDistributionEntry = {
+  range: string
+  count: number
+  percentage: number
+}
+
+export type IssueReportTimelineEntry = {
+  date: string
+  open: number
+  in_progress: number
+  closed: number
+}
+
+export type IssueReportData = {
+  statusCounts: {
+    open: number
+    in_progress: number
+    closed: number
+  }
+  timelineData: IssueReportTimelineEntry[]
 }

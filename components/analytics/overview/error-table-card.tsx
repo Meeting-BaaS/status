@@ -1,6 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
-import { errorTableColumns, type ErrorTableData } from "./error-table-columns"
+import {
+  errorTableColumns,
+  type ErrorTableData
+} from "@/components/analytics/overview/error-table-columns"
 
 interface ErrorTableCardProps {
   data: ErrorTableData[]

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
-import { cn, formatNumber, formatPercentage } from "@/lib/utils"
+import { cn, formatNumber, formatPercentage, platformGradients } from "@/lib/utils"
 import { useMemo } from "react"
 import {
   Bar,
@@ -16,7 +16,7 @@ import {
   type LabelProps,
   YAxis
 } from "recharts"
-import { AnimatedNumber } from "../ui/animated-number"
+import { AnimatedNumber } from "@/components/ui/animated-number"
 
 interface PlatformDistributionCardProps {
   platformDistribution: Array<{
@@ -27,36 +27,39 @@ interface PlatformDistributionCardProps {
   totalBots: number
 }
 
-interface CustomLabelProps extends LabelProps {
-  viewBox?: {
-    x: number
-    y: number
-    width: number
-    height: number
-  }
-}
+function PlatformDistributionTooltip(props: RechartsTooltipProps<number, string>) {
+  const { active, payload } = props
 
-const platformGradients = {
-  zoom: {
-    start: "#e6f0ff",
-    middle: "#4d8cff",
-    end: "#0b5cff"
-  },
-  teams: {
-    start: "#e8e8ff",
-    middle: "#7a7fd1",
-    end: "#464EB8"
-  },
-  "google-meet": {
-    start: "#dcfce7",
-    middle: "#22c55e",
-    end: "#166534"
-  },
-  unknown: {
-    start: "#d3d3d3",
-    middle: "#a0a0a0",
-    end: "#707070"
-  }
+  if (!active || !payload?.length) return null
+
+  const data = payload[0]
+  const value = Number(data.payload.count)
+  const percentage = (value / data.payload.totalBots) * 100
+  const platformName = data.payload.platform
+    ?.toLowerCase()
+    .replace(/\s+/g, "-") as keyof typeof platformGradients
+
+  // Ensure we have a valid platform name
+  if (!platformName || !platformGradients[platformName]) return null
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm capitalize">{data.payload.platform}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs">
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{
+              background: `linear-gradient(45deg, ${platformGradients[platformName].start}, ${platformGradients[platformName].middle}, ${platformGradients[platformName].end})`
+            }}
+          />
+          <span className="ml-auto font-medium">
+            {formatNumber(value)} ({formatPercentage(percentage)})
+          </span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function PlatformDistributionCard({
@@ -85,41 +88,6 @@ export function PlatformDistributionCard({
       {} as Record<string, { label: string; color: string }>
     )
   }, [platformDistribution])
-
-  function PlatformDistributionTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload } = props
-
-    if (!active || !payload?.length) return null
-
-    const data = payload[0]
-    const value = Number(data.payload.count)
-    const percentage = (value / data.payload.totalBots) * 100
-    const platformName = data.payload.platform
-      ?.toLowerCase()
-      .replace(/\s+/g, "-") as keyof typeof platformGradients
-
-    // Ensure we have a valid platform name
-    if (!platformName || !platformGradients[platformName]) return null
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm capitalize">{data.payload.platform}</p>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <div
-              className="h-2 w-2 rounded-full"
-              style={{
-                background: `linear-gradient(45deg, ${platformGradients[platformName].start}, ${platformGradients[platformName].middle}, ${platformGradients[platformName].end})`
-              }}
-            />
-            <span className="ml-auto font-medium">
-              {formatNumber(value)} ({formatPercentage(percentage)})
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   const CustomLabel = (props: LabelProps) =>
     useMemo(() => {

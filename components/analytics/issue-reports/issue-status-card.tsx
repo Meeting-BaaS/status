@@ -6,13 +6,14 @@ import { LOGS_URL } from "@/lib/external-urls"
 import { ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import type { UserReportedErrorStatus } from "@/lib/types"
 
 interface IssueStatusCardProps {
   title: string
   description: string
   count: number
   color: string
-  status: "open" | "in_progress" | "closed"
+  status: UserReportedErrorStatus
 }
 
 export function IssueStatusCard({

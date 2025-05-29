@@ -1,4 +1,4 @@
-import type { ChartData, DailyTokenConsumption } from "@/lib/types"
+import type { ConsumptionChartData, DailyTokenConsumption } from "@/lib/types"
 import dayjs from "dayjs"
 
 /**
@@ -50,7 +50,7 @@ export function getChartData(
   tokenConsumption: DailyTokenConsumption[],
   startDate: Date,
   endDate: Date
-): ChartData[] {
+): ConsumptionChartData[] {
   // Generate array of all dates in range
   const allDates: Date[] = []
   const currentDate = new Date(startDate)

@@ -1,24 +1,16 @@
-import { DurationTimelineCard } from "./duration-timeline-card"
-import { DurationPlatformCard } from "./duration-platform-card"
-import { DurationDistributionCard } from "./duration-distribution-card"
+import { DurationTimelineCard } from "@/components/analytics/duration/duration-timeline-card"
+import { DurationPlatformCard } from "@/components/analytics/duration/duration-platform-card"
+import { DurationDistributionCard } from "@/components/analytics/duration/duration-distribution-card"
+import type {
+  DurationTimelineEntry,
+  PlatformDurationEntry,
+  DurationDistributionEntry
+} from "@/lib/types"
 
 interface DurationProps {
-  durationTimelineData: Array<{
-    date: string
-    averageDuration: number
-    totalDuration: number
-    botCount: number
-  }>
-  platformDurationData: Array<{
-    name: string
-    value: number
-    count: number
-  }>
-  durationDistributionData: Array<{
-    range: string
-    count: number
-    percentage: number
-  }>
+  durationTimelineData: DurationTimelineEntry[]
+  platformDurationData: PlatformDurationEntry[]
+  durationDistributionData: DurationDistributionEntry[]
   averageDuration: number
 }
 

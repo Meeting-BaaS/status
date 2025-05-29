@@ -11,26 +11,27 @@ import {
 import type { TooltipProps as RechartsTooltipProps } from "recharts"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatFloat } from "@/lib/utils"
-import type { ChartData } from "@/lib/types"
+import type { ConsumptionChartData } from "@/lib/types"
 import dayjs from "dayjs"
+import { schemeTableau10 } from "d3-scale-chromatic"
 
 const chartConfig = {
   recording: {
     label: "Recording",
-    color: "var(--chart-1)"
+    color: schemeTableau10[0]
   },
   transcription: {
     label: "Transcription",
-    color: "var(--chart-2)"
+    color: schemeTableau10[1]
   },
   streaming: {
     label: "Streaming",
-    color: "var(--chart-3)"
+    color: schemeTableau10[2]
   }
 } as const
 
 interface TokenUsageChartProps {
-  data: ChartData[]
+  data: ConsumptionChartData[]
 }
 
 function TokenUsageTooltip(props: RechartsTooltipProps<number, string>) {
@@ -94,21 +95,21 @@ export function TokenUsageChart({ data }: TokenUsageChartProps) {
             <Line
               type="monotone"
               dataKey="recording"
-              stroke="var(--chart-1)"
+              stroke={schemeTableau10[0]}
               strokeWidth={2}
               dot={false}
             />
             <Line
               type="monotone"
               dataKey="transcription"
-              stroke="var(--chart-2)"
+              stroke={schemeTableau10[1]}
               strokeWidth={2}
               dot={false}
             />
             <Line
               type="monotone"
               dataKey="streaming"
-              stroke="var(--chart-3)"
+              stroke={schemeTableau10[2]}
               strokeWidth={2}
               dot={false}
             />

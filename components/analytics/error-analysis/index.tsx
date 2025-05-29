@@ -1,16 +1,10 @@
 "use client"
 
-import { ErrorTimelineCard } from "./error-timeline-card"
+import { ErrorTimelineCard } from "@/components/analytics/error-analysis/error-timeline-card"
+import type { TimelineEntry } from "@/lib/types"
 
 interface ErrorAnalysisProps {
-  timelineData: Array<{
-    date: string
-    total: number
-    priorities: Array<{
-      priority: string
-      count: number
-    }>
-  }>
+  timelineData: TimelineEntry[]
 }
 
 export default function ErrorAnalysis({ timelineData }: ErrorAnalysisProps) {

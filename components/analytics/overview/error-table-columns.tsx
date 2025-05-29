@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { SortableHeader } from "@/components/ui/sortable-header"
 import { getErrorMessageColor } from "@/lib/utils"
+import { Badge, type badgeVariants } from "@/components/ui/badge"
 
 export interface ErrorTableData {
   type: string
@@ -58,7 +59,7 @@ export const errorTableColumns: ColumnDef<ErrorTableData>[] = [
       const { message, priority, category } = row.original
       return (
         <span className="whitespace-normal break-words text-sm">
-          <span className={getErrorMessageColor(message, priority, category)}>{message}</span>
+          <span className={getErrorMessageColor(priority)}>{message}</span>
         </span>
       )
     }
@@ -71,30 +72,13 @@ export const errorTableColumns: ColumnDef<ErrorTableData>[] = [
       return (
         <div className="flex flex-wrap gap-1">
           {Object.entries(platforms).map(([platform, count]) => (
-            <span
+            <Badge
+              className="px-2 py-0.5 text-xs capitalize"
               key={platform}
-              className="rounded-full bg-primary/10 px-2 py-0.5 text-xs capitalize"
-              style={{
-                backgroundColor:
-                  platform === "zoom"
-                    ? "rgba(14, 113, 235, 0.1)"
-                    : platform === "teams"
-                      ? "rgba(98, 100, 167, 0.1)"
-                      : platform === "google meet"
-                        ? "rgba(0, 172, 71, 0.1)"
-                        : "rgba(100, 116, 139, 0.1)",
-                color:
-                  platform === "zoom"
-                    ? "#0E71EB"
-                    : platform === "teams"
-                      ? "#6264A7"
-                      : platform === "google meet"
-                        ? "#00AC47"
-                        : "#64748B"
-              }}
+              variant={platform.toLowerCase().replace(" ", "-") as keyof typeof badgeVariants}
             >
               {platform}: {count}
-            </span>
+            </Badge>
           ))}
         </div>
       )

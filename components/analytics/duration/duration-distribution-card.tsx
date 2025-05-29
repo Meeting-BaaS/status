@@ -16,16 +16,45 @@ import {
   YAxis,
   type TooltipProps as RechartsTooltipProps
 } from "recharts"
-import { scaleOrdinal } from "d3-scale"
+import { type ScaleOrdinal, scaleOrdinal } from "d3-scale"
 import { schemeTableau10 } from "d3-scale-chromatic"
+import type { DurationDistributionEntry } from "@/lib/types"
 
 interface DurationDistributionCardProps {
-  distributionData: Array<{
-    range: string
-    count: number
-    percentage: number
-  }>
+  distributionData: DurationDistributionEntry[]
   averageDuration: number
+}
+
+function DurationDistributionTooltip(
+  props: RechartsTooltipProps<number, string>,
+  distributionData: DurationDistributionEntry[],
+  colorScale: ScaleOrdinal<string, string>
+) {
+  const { active, payload } = props
+
+  if (!active || !payload?.length) return null
+
+  const data = payload[0]
+  const percentage = (
+    (data.payload.count / distributionData.reduce((sum, item) => sum + item.count, 0)) *
+    100
+  ).toFixed(1)
+
+  return (
+    <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+      <p className="mb-2 font-medium text-sm">{data.payload.range}</p>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs">
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: colorScale(data.payload.range) as string }}
+          />
+          <span className="ml-auto font-medium">{formatNumber(data.payload.count)} bots</span>
+        </div>
+        <div className="text-muted-foreground text-xs">{percentage}% of total</div>
+      </div>
+    </div>
+  )
 }
 
 export function DurationDistributionCard({
@@ -33,7 +62,7 @@ export function DurationDistributionCard({
   averageDuration
 }: DurationDistributionCardProps) {
   const colorScale = useMemo(() => {
-    return scaleOrdinal()
+    return scaleOrdinal<string, string>()
       .domain(distributionData.map((d) => d.range))
       .range(schemeTableau10)
   }, [distributionData])
@@ -51,39 +80,11 @@ export function DurationDistributionCard({
     )
   }, [distributionData, colorScale])
 
-  function DurationDistributionTooltip(props: RechartsTooltipProps<number, string>) {
-    const { active, payload } = props
-
-    if (!active || !payload?.length) return null
-
-    const data = payload[0]
-    const percentage = (
-      (data.payload.count / distributionData.reduce((sum, item) => sum + item.count, 0)) *
-      100
-    ).toFixed(1)
-
-    return (
-      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
-        <p className="mb-2 font-medium text-sm">{data.payload.range}</p>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <div
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: colorScale(data.payload.range) as string }}
-            />
-            <span className="ml-auto font-medium">{formatNumber(data.payload.count)} bots</span>
-          </div>
-          <div className="text-muted-foreground text-xs">{percentage}% of total</div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <Card className="dark:bg-baas-black">
       <CardHeader>
         <CardTitle>Duration Distribution</CardTitle>
-        <CardDescription>Bot count by duration range</CardDescription>
+        <CardDescription>Distribution of bot durations</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="relative h-80">
@@ -106,7 +107,9 @@ export function DurationDistributionCard({
                   tickFormatter={(value) => formatNumber(value)}
                 />
                 <Tooltip
-                  content={DurationDistributionTooltip}
+                  content={(props: RechartsTooltipProps<number, string>) =>
+                    DurationDistributionTooltip(props, distributionData, colorScale)
+                  }
                   cursor={false}
                   wrapperStyle={{ outline: "none", zIndex: 10 }}
                 />
