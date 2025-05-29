@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import { LIMIT_STORAGE_KEY, limitOptions } from "@/components/filters/limit-selector"
@@ -16,8 +16,17 @@ import { ErrorDistributionCard } from "@/components/analytics/error-distribution
 import { PlatformDistributionCard } from "@/components/analytics/platform-distribution-card"
 import { PlatformPerformanceCard } from "@/components/analytics/platform-performance-card"
 import { ErrorTableCard } from "@/components/analytics/error-table-card"
+import { MainTabs } from "@/components/ui/main-tabs"
+import ErrorAnalysis from "@/components/analytics/error-analysis"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
+
+const tabs = [
+  { id: "overview", label: "Overview" },
+  { id: "error-analysis", label: "Error Analysis" },
+  { id: "duration", label: "Duration" },
+  { id: "issue-reports", label: "Issue Reports" }
+]
 
 export function Analytics() {
   const router = useRouter()
@@ -25,6 +34,7 @@ export function Analytics() {
 
   // Pagination state
   const [offset, setOffset] = useState(0)
+  const [currentTab, setCurrentTab] = useState(tabs[0].id)
   const [limit, setLimit] = useState(() => {
     // Initialize from localStorage if available, otherwise use default
     if (typeof window !== "undefined") {
@@ -66,6 +76,34 @@ export function Analytics() {
     filters
   })
 
+  const renderTabContent = useMemo(() => {
+    if (!data) return null
+
+    switch (currentTab) {
+      case "overview":
+        return (
+          <>
+            <div className="flex flex-col gap-4 md:flex-row">
+              <PlatformDistributionCard
+                platformDistribution={data.platformDistribution}
+                totalBots={data.allBots.length}
+              />
+              <PlatformPerformanceCard platformDistribution={data.platformDistribution} />
+            </div>
+            <ErrorDistributionCard
+              errorDistributionData={data.errorDistributionData}
+              totalErrors={data.errorBots.length}
+            />
+            <ErrorTableCard data={data.errorTableData} />
+          </>
+        )
+      case "error-analysis":
+        return <ErrorAnalysis timelineData={data.timelineData} />
+      default:
+        return null
+    }
+  }, [currentTab, data])
+
   return (
     <div className="relative">
       {/* Loading state - only show full screen loader on initial load */}
@@ -80,8 +118,8 @@ export function Analytics() {
       ) : (
         <div className="flex flex-col gap-4">
           <div>
-            <h1 className="font-bold text-2xl">Meeting Bot Analytics</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="font-bold text-3xl">Meeting Bot Analytics</h1>
+            <p className="text-muted-foreground">
               Monitor your meeting bot performance and statistics - Change this description
             </p>
           </div>
@@ -102,20 +140,15 @@ export function Analytics() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-4 md:flex-row">
-                <PlatformDistributionCard
-                  platformDistribution={data.platformDistribution}
-                  totalBots={data.allBots.length}
-                />
-                <PlatformPerformanceCard platformDistribution={data.platformDistribution} />
-              </div>
-              <ErrorDistributionCard
-                errorDistributionData={data.errorDistributionData}
-                totalErrors={data.errorBots.length}
+            <>
+              <MainTabs
+                currentTab={currentTab}
+                setCurrentTab={setCurrentTab}
+                tabs={tabs}
+                containerClassName="mb-4"
               />
-              <ErrorTableCard data={data.errorTableData} />
-            </div>
+              <div className="space-y-4">{renderTabContent}</div>
+            </>
           )}
         </div>
       )}

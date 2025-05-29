@@ -32,7 +32,7 @@ function MeetingHoursTooltip(props: RechartsTooltipProps<number, string>) {
 
   return (
     <div className="rounded-lg border bg-background p-2 shadow-sm">
-      <p className="mb-2 font-medium text-sm">{label}</p>
+      <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
       <div className="space-y-1">
         {payload.map((item, index) => {
           const key = item.dataKey as keyof typeof chartConfig
@@ -62,14 +62,18 @@ export function MeetingHoursChart({ data }: MeetingHoursChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-            <XAxis dataKey="date" tickFormatter={(date) => dayjs(date).format("D MMM")} />
-            <YAxis />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: "0.75rem" }}
+              tickFormatter={(date) => dayjs(date).format("D MMM")}
+            />
+            <YAxis tick={{ fontSize: "0.75rem" }} />
             <Tooltip
               content={MeetingHoursTooltip}
-              cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
+              cursor={false}
               wrapperStyle={{ outline: "none" }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: "0.75rem", textTransform: "capitalize" }} />
             <Line
               type="monotone"
               dataKey="duration"

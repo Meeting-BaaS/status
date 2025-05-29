@@ -68,7 +68,7 @@ export function getChartData(
 
     if (!existingData) {
       return {
-        date: dayjs(date).format("MMM D"),
+        date: dayjs(date).format("YYYY-MM-DD"),
         recording: 0,
         transcription: 0,
         streaming: 0,
@@ -82,7 +82,7 @@ export function getChartData(
     const { consumption_by_service } = existingData
 
     return {
-      date: dayjs(date).format("MMM D"),
+      date: dayjs(date).format("YYYY-MM-DD"),
       recording: consumption_by_service.recording_tokens,
       transcription:
         consumption_by_service.transcription_tokens +

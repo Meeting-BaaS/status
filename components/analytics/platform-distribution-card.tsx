@@ -191,14 +191,14 @@ export function PlatformDistributionCard({
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
-          <div className="absolute top-0 right-0 flex h-full flex-col justify-between pt-5 pr-2 pb-5">
+          <div className="absolute top-0 right-0 flex h-full flex-col justify-between pt-4.5 pr-2 pb-4.5">
             {chartData.map((entry) => (
               <div
                 key={entry.platform}
                 className={cn(
                   "flex h-7 items-center font-bold text-lg",
                   chartData.length === 1 && "h-full",
-                  chartData.length === 2 && "h-22",
+                  chartData.length === 2 && "h-24",
                   chartData.length === 3 && "h-12"
                 )}
               >

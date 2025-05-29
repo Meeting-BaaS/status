@@ -139,14 +139,6 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
 
       // Transform data for error table
       const errorTableData = map(errorDistribution, (bots, value) => {
-        const platforms = groupBy(bots, "platform")
-        const platformCounts = Object.fromEntries(
-          Object.entries(platforms).map(([platform, platformBots]) => [
-            platform,
-            platformBots.length
-          ])
-        )
-
         // Get status information from the first bot in the group as they all would have the same status
         const { status } = bots[0]
         const category = status.category || "unknown_error"
@@ -155,11 +147,20 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         // Normalize error message and type for webhook and stalled errors
         let normalizedType = value
         let normalizedMessage = details
+        let normalizedGroups: Array<{
+          type: string
+          message: string
+          bots: typeof bots
+        }> = []
+        let finalBots = bots
 
         if (category === "webhook_error") {
           // Group webhook errors by their status codes
-          const webhookGroups: Record<string, { count: number; messages: string[] }> = {
-            other: { count: 0, messages: [] }
+          const webhookGroups: Record<
+            string,
+            { count: number; messages: string[]; bots: typeof bots }
+          > = {
+            other: { count: 0, messages: [], bots: [] }
           }
 
           // Extract status codes from each bot's details
@@ -168,21 +169,23 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
             if (statusMatch?.[1]) {
               const statusCode = statusMatch[1]
               if (!webhookGroups[statusCode]) {
-                webhookGroups[statusCode] = { count: 0, messages: [] }
+                webhookGroups[statusCode] = { count: 0, messages: [], bots: [] }
               }
               webhookGroups[statusCode].count++
               webhookGroups[statusCode].messages.push(bot.status.details || "")
+              webhookGroups[statusCode].bots.push(bot)
             } else {
               // Handle webhook errors without status codes
               webhookGroups.other.count++
               webhookGroups.other.messages.push(bot.status.details || "Webhook Error")
+              webhookGroups.other.bots.push(bot)
             }
           }
 
           // Create separate entries for each status code group
-          const groups = Object.entries(webhookGroups)
+          normalizedGroups = Object.entries(webhookGroups)
             .filter(([_, { count }]) => count > 0) // Only include groups with errors
-            .map(([statusCode, { count, messages }]) => {
+            .map(([statusCode, { count, messages, bots }]) => {
               const type =
                 statusCode === "other" ? "Webhook Error (Other)" : `Webhook Error (${statusCode})`
               const message =
@@ -193,31 +196,44 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
               return {
                 type,
                 message,
-                count,
-                platforms: platformCounts
+                bots
               }
             })
 
           // If we have multiple groups, we need to split this into multiple entries
-          if (groups.length > 1) {
-            return groups.map((group) => ({
-              ...group,
-              category: allErrorCategories.find((c) => c.value === category)?.label || category,
-              priority: getPriorityForError(category)
-            }))
+          if (normalizedGroups.length > 1) {
+            return normalizedGroups.map((group) => {
+              const platforms = groupBy(group.bots, "platform")
+              const platformCounts = Object.fromEntries(
+                Object.entries(platforms).map(([platform, platformBots]) => [
+                  platform,
+                  platformBots.length
+                ])
+              )
+
+              return {
+                ...group,
+                originalType: value,
+                category: allErrorCategories.find((c) => c.value === category)?.label || category,
+                priority: getPriorityForError(category),
+                platforms: platformCounts,
+                count: group.bots.length
+              }
+            })
           }
 
           // If we only have one group, use its data
-          if (groups.length === 1) {
-            normalizedType = groups[0].type
-            normalizedMessage = groups[0].message
+          if (normalizedGroups.length === 1) {
+            normalizedType = normalizedGroups[0].type
+            normalizedMessage = normalizedGroups[0].message
+            finalBots = normalizedGroups[0].bots
           }
         } else if (category === "stalled_error") {
           // Group stalled errors by their time ranges
-          const stalledGroups = {
-            under24h: [] as number[],
-            under48h: [] as number[],
-            over48h: [] as number[]
+          const stalledGroups: Record<string, { values: number[]; bots: typeof bots }> = {
+            under24h: { values: [], bots: [] },
+            under48h: { values: [], bots: [] },
+            over48h: { values: [], bots: [] }
           }
 
           // Extract hours from each bot's details
@@ -226,19 +242,22 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
             if (hoursMatch?.[1]) {
               const hours = Number.parseFloat(hoursMatch[1])
               if (hours < 24) {
-                stalledGroups.under24h.push(hours)
+                stalledGroups.under24h.values.push(hours)
+                stalledGroups.under24h.bots.push(bot)
               } else if (hours < 48) {
-                stalledGroups.under48h.push(hours)
+                stalledGroups.under48h.values.push(hours)
+                stalledGroups.under48h.bots.push(bot)
               } else {
-                stalledGroups.over48h.push(hours)
+                stalledGroups.over48h.values.push(hours)
+                stalledGroups.over48h.bots.push(bot)
               }
             }
           }
 
           // Create separate entries for each non-empty group
-          const groups = Object.entries(stalledGroups)
-            .filter(([_, values]) => values.length > 0)
-            .map(([key, values]) => {
+          normalizedGroups = Object.entries(stalledGroups)
+            .filter(([_, { values }]) => values.length > 0)
+            .map(([key, { values, bots }]) => {
               const avgHours = values.reduce((sum, hours) => sum + hours, 0) / values.length
               const formattedHours = avgHours.toFixed(1)
               let type: string
@@ -262,39 +281,117 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
               return {
                 type,
                 message,
-                count: values.length,
-                platforms: platformCounts
+                bots
               }
             })
 
           // If we have multiple groups, we need to split this into multiple entries
-          if (groups.length > 1) {
-            return groups.map((group) => ({
-              ...group,
-              category: allErrorCategories.find((c) => c.value === category)?.label || category,
-              priority: getPriorityForError(category)
-            }))
+          if (normalizedGroups.length > 1) {
+            return normalizedGroups.map((group) => {
+              const platforms = groupBy(group.bots, "platform")
+              const platformCounts = Object.fromEntries(
+                Object.entries(platforms).map(([platform, platformBots]) => [
+                  platform,
+                  platformBots.length
+                ])
+              )
+
+              return {
+                ...group,
+                originalType: value,
+                category: allErrorCategories.find((c) => c.value === category)?.label || category,
+                priority: getPriorityForError(category),
+                platforms: platformCounts,
+                count: group.bots.length
+              }
+            })
           }
 
           // If we only have one group, use its data
-          if (groups.length === 1) {
-            normalizedType = groups[0].type
-            normalizedMessage = groups[0].message
+          if (normalizedGroups.length === 1) {
+            normalizedType = normalizedGroups[0].type
+            normalizedMessage = normalizedGroups[0].message
+            finalBots = normalizedGroups[0].bots
           }
         }
+
+        // Calculate platform distribution for the final group of bots
+        const platforms = groupBy(finalBots, "platform")
+        const platformCounts = Object.fromEntries(
+          Object.entries(platforms).map(([platform, platformBots]) => [
+            platform,
+            platformBots.length
+          ])
+        )
 
         // Determine priority based on category
         const priority = getPriorityForError(category)
 
         return {
           type: normalizedType,
+          originalType: value,
           message: normalizedMessage,
           category: allErrorCategories.find((c) => c.value === category)?.label || category,
           priority,
           platforms: platformCounts,
-          count: bots.length
+          count: finalBots.length
         }
       }).flat() // Flatten the array in case we have multiple stalled error entries
+
+      // Transform data for timeline
+      const transformTimelineData = () => {
+        // Get all unique dates from the data
+        const allDates = Array.from(
+          new Set(formattedBots.map((bot) => dayjs(bot.created_at).format("YYYY-MM-DD")))
+        ).sort()
+
+        // Get all unique priorities
+        const allPriorities = Array.from(
+          new Set(
+            formattedBots
+              .filter((bot) => ["error", "warning"].includes(bot.status.type.toLowerCase()))
+              .map((bot) => getPriorityForError(bot.status.category || "unknown_error"))
+          )
+        )
+
+        // Create a map of dates to error counts by priority
+        const dateMap = new Map(
+          allDates.map((date) => [
+            date,
+            allPriorities.reduce(
+              (acc, priority) => {
+                acc[priority] = 0
+                return acc
+              },
+              {} as Record<string, number>
+            )
+          ])
+        )
+
+        // Fill in the actual counts
+        const errorBots = formattedBots.filter((bot) =>
+          ["error", "warning"].includes(bot.status.type.toLowerCase())
+        )
+
+        for (const bot of errorBots) {
+          const date = dayjs(bot.created_at).format("YYYY-MM-DD")
+          const priority = getPriorityForError(bot.status.category || "unknown_error")
+          const dateData = dateMap.get(date)
+          if (dateData) {
+            dateData[priority] = (dateData[priority] || 0) + 1
+          }
+        }
+
+        // Convert to array format for the chart
+        return Array.from(dateMap.entries()).map(([date, priorities]) => ({
+          date,
+          total: Object.values(priorities).reduce((sum, count) => sum + count, 0),
+          priorities: Object.entries(priorities).map(([priority, count]) => ({
+            priority,
+            count
+          }))
+        }))
+      }
 
       return {
         has_more: data.has_more,
@@ -305,7 +402,8 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         dailyStats,
         errorTypes,
         errorDistributionData,
-        errorTableData
+        errorTableData,
+        timelineData: transformTimelineData()
       }
     },
     staleTime: 1000 * 60 * 5,

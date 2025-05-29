@@ -1,0 +1,157 @@
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer } from "@/components/ui/chart"
+import { formatNumber } from "@/lib/utils"
+import { useMemo } from "react"
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Legend,
+  type TooltipProps as RechartsTooltipProps,
+  CartesianGrid
+} from "recharts"
+import { scaleOrdinal } from "d3-scale"
+import { schemeTableau10 } from "d3-scale-chromatic"
+import dayjs from "dayjs"
+
+interface ErrorTimelineCardProps {
+  timelineData: Array<{
+    date: string
+    total: number
+    priorities: Array<{
+      priority: string
+      count: number
+    }>
+  }>
+}
+
+export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
+  console.log("timelineData", timelineData)
+  // Get all unique priorities from the timeline data
+  const priorities = useMemo(() => {
+    const uniquePriorities = new Set<string>()
+    for (const day of timelineData) {
+      for (const { priority } of day.priorities) {
+        uniquePriorities.add(priority)
+      }
+    }
+    return Array.from(uniquePriorities)
+  }, [timelineData])
+
+  // Create a color scale for priorities
+  const colorScale = useMemo(() => {
+    return scaleOrdinal().domain(priorities).range(schemeTableau10)
+  }, [priorities])
+
+  // Chart configuration
+  const chartConfig = useMemo(() => {
+    return priorities.reduce(
+      (acc, priority) => {
+        acc[priority] = {
+          label: priority,
+          color: colorScale(priority) as string
+        }
+        return acc
+      },
+      {} as Record<string, { label: string; color: string }>
+    )
+  }, [priorities, colorScale])
+
+  // Transform data for the chart
+  const chartData = useMemo(() => {
+    return timelineData.map((day) => {
+      const transformedDay: Record<string, number | string> = {
+        date: day.date,
+        total: day.total
+      }
+
+      // Add each priority count
+      for (const { priority, count } of day.priorities) {
+        transformedDay[priority] = count
+      }
+
+      return transformedDay
+    })
+  }, [timelineData])
+
+  function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
+    const { active, payload, label } = props
+
+    if (!active || !payload?.length) return null
+
+    return (
+      <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
+        <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
+        <div className="space-y-1">
+          {payload.map((entry) => (
+            <div key={entry.name} className="flex items-center gap-2 text-xs">
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: entry.color as string }}
+              />
+              <span className="capitalize">{entry.name}</span>
+              <span className="ml-auto font-medium">{formatNumber(entry.value as number)}</span>
+            </div>
+          ))}
+          <div className="mt-1 border-t pt-1">
+            <div className="flex items-center justify-between font-medium text-xs">
+              <span>Total</span>
+              <span>
+                {formatNumber(payload.reduce((sum, entry) => sum + (entry.value as number), 0))}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Card className="dark:bg-baas-black">
+      <CardHeader>
+        <CardTitle>Error Timeline</CardTitle>
+        <CardDescription>Daily distribution of errors by priority</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-80">
+          <ChartContainer config={chartConfig} className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) => dayjs(value).format("D MMM")}
+                  tick={{ fontSize: "0.75rem" }}
+                  interval="preserveStartEnd"
+                  minTickGap={50}
+                />
+                <YAxis
+                  tickFormatter={(value) => formatNumber(value)}
+                  tick={{ fontSize: "0.75rem" }}
+                />
+                <Tooltip content={ErrorTimelineTooltip} cursor={false} />
+                <Legend wrapperStyle={{ fontSize: "0.75rem", textTransform: "capitalize" }} />
+                {Object.entries(chartConfig).map(([priority, { color }]) => (
+                  <Line
+                    key={priority}
+                    type="monotone"
+                    dataKey={priority}
+                    stroke={color}
+                    name={priority}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
