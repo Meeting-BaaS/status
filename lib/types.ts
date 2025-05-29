@@ -94,14 +94,20 @@ export type FilterState = {
   platformFilters: string[]
   statusFilters: string[]
   userReportedErrorStatusFilters: string[]
-  errorCategoryFilters?: string[]
-  errorPriorityFilters?: string[]
+  errorCategoryFilters: string[]
+  errorPriorityFilters: string[]
 }
 
-export type PlatformDistribution = {
+export interface PlatformDistribution {
   platform: string
   count: number
   percentage: number
+  statusDistribution: {
+    success: { count: number; percentage: number }
+    error: { count: number; percentage: number }
+    warning: { count: number; percentage: number }
+    other: { count: number; percentage: number }
+  }
 }
 
 export type DailyStats = {

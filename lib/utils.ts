@@ -288,3 +288,31 @@ export const getProgressBarColors = (availableTokens: number) => {
     text: "text-primary"
   }
 }
+
+export function getErrorMessageColor(message: string, priority?: string, category?: string) {
+  if (priority === "critical") return "text-destructive"
+  if (priority === "high") return "text-amber-500"
+  return "text-foreground"
+}
+
+export function getPriorityForError(category?: string): string {
+  switch (category) {
+    case "system_error":
+    case "stalled_error":
+      return "critical"
+    case "auth_error":
+    case "capacity_error":
+    case "connection_error":
+      return "high"
+    case "permission_error":
+    case "input_error":
+    case "duplicate_error":
+    case "unknown_error":
+      return "medium"
+    case "webhook_error":
+    case "api_error":
+      return "low"
+    default:
+      return "medium"
+  }
+}

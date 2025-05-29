@@ -11,47 +11,25 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet"
-import {
-  allErrorCategories,
-  allErrorPriorities,
-  allPlatforms,
-  allStatuses,
-  allUserReportedErrorStatuses
-} from "@/lib/filter-options"
+import { filtersFields } from "@/lib/filter-options"
 import { filtersSchema, type FiltersFormData } from "@/lib/schemas/filters"
 import type { FilterState } from "@/lib/types"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Filter, FunnelX } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Accordion } from "@/components/ui/accordion"
 
-const filtersFields = [
-  {
-    name: "platformFilters",
-    label: "Platform",
-    options: allPlatforms
-  },
-  {
-    name: "statusFilters",
-    label: "Status",
-    options: allStatuses
-  },
-  {
-    name: "userReportedErrorStatusFilters",
-    label: "User Reported Error",
-    options: allUserReportedErrorStatuses
-  },
-  {
-    name: "errorCategoryFilters",
-    label: "Error Category",
-    options: allErrorCategories
-  },
-  {
-    name: "errorPriorityFilters",
-    label: "Error Priority",
-    options: allErrorPriorities
-  }
-]
+const emptyFilters = {
+  platformFilters: [],
+  statusFilters: [],
+  userReportedErrorStatusFilters: [],
+  errorCategoryFilters: [],
+  errorPriorityFilters: []
+}
+
+const ACCORDION_STORAGE_KEY = "analytics-accordion-state"
 
 interface AdditionalFiltersProps {
   filters: FilterState
@@ -60,14 +38,42 @@ interface AdditionalFiltersProps {
 
 export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProps) {
   const [open, setOpen] = useState(false)
+  const [accordionValue, setAccordionValue] = useState<string[]>(() => {
+    // Initialize from localStorage if available
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(ACCORDION_STORAGE_KEY)
+      return stored
+        ? JSON.parse(stored)
+        : ["platformFilters", "statusFilters", "userReportedErrorStatusFilters"]
+    }
+    return ["platformFilters", "statusFilters", "userReportedErrorStatusFilters"]
+  })
+
+  // Listen for changes in other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === ACCORDION_STORAGE_KEY && e.newValue) {
+        setAccordionValue(JSON.parse(e.newValue))
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
+
+  const handleAccordionChange = (value: string[]) => {
+    setAccordionValue(value)
+    localStorage.setItem(ACCORDION_STORAGE_KEY, JSON.stringify(value))
+  }
+
   const form = useForm<FiltersFormData>({
     resolver: zodResolver(filtersSchema),
     defaultValues: {
       platformFilters: filters.platformFilters,
       statusFilters: filters.statusFilters,
       userReportedErrorStatusFilters: filters.userReportedErrorStatusFilters,
-      errorCategoryFilters: filters.errorCategoryFilters || [],
-      errorPriorityFilters: filters.errorPriorityFilters || []
+      errorCategoryFilters: filters.errorCategoryFilters,
+      errorPriorityFilters: filters.errorPriorityFilters
     }
   })
 
@@ -84,28 +90,14 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
 
   const handleClearAll = () => {
     setOpen(false)
-    form.reset({
-      platformFilters: [],
-      statusFilters: [],
-      userReportedErrorStatusFilters: [],
-      errorCategoryFilters: [],
-      errorPriorityFilters: []
-    })
-    setFilters({
-      platformFilters: [],
-      statusFilters: [],
-      userReportedErrorStatusFilters: [],
-      errorCategoryFilters: [],
-      errorPriorityFilters: []
-    })
+    form.reset(emptyFilters)
+    setFilters(emptyFilters)
   }
 
-  const isFiltered = Object.keys(filters).some(
-    (key) => {
-      const filterArray = filters[key as keyof FilterState];
-      return filterArray && filterArray.length > 0;
-    }
-  )
+  const isFiltered = Object.keys(filters).some((key) => {
+    const filterArray = filters[key as keyof FilterState]
+    return filterArray && filterArray.length > 0
+  })
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -121,28 +113,37 @@ export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProp
           <SheetDescription>Select one or more filters to narrow down the results</SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4">
-            {filtersFields.map((filter) => (
-              <FormField
-                key={filter.name}
-                control={form.control}
-                name={filter.name as keyof FiltersFormData}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <CheckboxFilter
-                        options={filter.options}
-                        label={filter.label}
-                        selectedValues={field.value ?? []}
-                        onFilterChange={(value) => field.onChange(value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
-            <div className="flex justify-between gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="pl-4">
+            <ScrollArea className="h-[calc(100svh-200px)] pr-4">
+              <Accordion
+                type="multiple"
+                value={accordionValue}
+                onValueChange={handleAccordionChange}
+              >
+                {filtersFields.map((filter) => (
+                  <FormField
+                    key={filter.name}
+                    control={form.control}
+                    name={filter.name as keyof FiltersFormData}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <CheckboxFilter
+                            options={filter.options}
+                            label={filter.label}
+                            name={filter.name}
+                            selectedValues={field.value ?? []}
+                            onFilterChange={(value) => field.onChange(value)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </Accordion>
+            </ScrollArea>
+            <div className="mt-6 flex justify-between gap-4 pr-4">
               <Button
                 type="button"
                 variant="outline"

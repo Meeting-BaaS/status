@@ -71,7 +71,7 @@ export default function Usage({ paymentStatus }: { paymentStatus?: string }) {
             <p className="text-muted-foreground">{session?.user.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+            <DateRangeFilter value={dateRange} onChange={setDateRange} hideToggle />
             <Button
               variant="ghost"
               size="icon"

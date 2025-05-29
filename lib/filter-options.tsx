@@ -47,3 +47,31 @@ export const allErrorPriorities: Option[] = [
   { label: "Medium", value: "medium", searchParam: "medium" },
   { label: "Low", value: "low", searchParam: "low" }
 ]
+
+export const filtersFields = [
+  {
+    name: "platformFilters",
+    label: "Platform",
+    options: allPlatforms
+  },
+  {
+    name: "statusFilters",
+    label: "Status",
+    options: allStatuses
+  },
+  {
+    name: "userReportedErrorStatusFilters",
+    label: "User Reported Error",
+    options: allUserReportedErrorStatuses
+  },
+  {
+    name: "errorCategoryFilters",
+    label: "Error Category",
+    options: allErrorCategories
+  },
+  {
+    name: "errorPriorityFilters",
+    label: "Error Priority",
+    options: allErrorPriorities
+  }
+]

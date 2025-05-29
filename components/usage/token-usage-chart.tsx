@@ -78,7 +78,7 @@ export function TokenUsageChart({ data }: TokenUsageChartProps) {
       <ChartContainer config={chartConfig} className="h-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis dataKey="date" tickFormatter={(date) => dayjs(date).format("D MMM")} />
             <YAxis />
             <Tooltip

@@ -1,236 +1,211 @@
-import { fetchBotStats, type FetchLogsParams } from "@/lib/api"
-import { getPlatformFromUrl } from "@/lib/format-bot-stats"
-import type {
-  BotData,
-  DailyStats,
-  ErrorCategory,
-  ErrorType,
-  FormattedBotData,
-  PlatformDistribution,
-  UserReportedErrorDistribution
-} from "@/lib/types"
 import { useQuery } from "@tanstack/react-query"
+import { fetchBotStats } from "@/lib/api"
 import dayjs from "dayjs"
-import { useMemo } from "react"
+import type {
+  DailyStats,
+  ErrorType,
+  FilterState,
+  FormattedBotData,
+  PlatformDistribution
+} from "@/lib/types"
+import { getPlatformFromUrl } from "@/lib/format-bot-stats"
+import { groupBy, map } from "lodash-es"
+import { getPriorityForError } from "@/lib/utils"
+import { allErrorCategories } from "@/lib/filter-options"
 
 interface UseBotStatsParams {
   offset: number
   limit: number
   startDate: Date | null
   endDate: Date | null
-  filters: {
-    platformFilters: string[]
-    statusFilters: string[]
-    userReportedErrorStatusFilters: string[]
-    errorCategoryFilters?: string[]
-    errorPriorityFilters?: string[]
-  }
+  filters: FilterState
 }
 
-export function useBotStats({
-  offset,
-  limit,
-  startDate,
-  endDate,
-  filters,
-}: UseBotStatsParams) {
-  const { data: apiData, isLoading, isError, error, isRefetching } = useQuery({
-    queryKey: ["bot-stats", offset, limit, startDate, endDate, filters],
-    queryFn: async () => {
-      const queryParams: FetchLogsParams = {
+export function useBotStats({ offset, limit, startDate, endDate, filters }: UseBotStatsParams) {
+  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery({
+    queryKey: ["bot-stats", { offset, limit, startDate, endDate, filters }],
+    queryFn: () => {
+      const {
+        platformFilters,
+        statusFilters,
+        userReportedErrorStatusFilters,
+        errorCategoryFilters,
+        errorPriorityFilters
+      } = filters
+      const queryParams = {
         offset,
         limit,
+        start_date: startDate ? `${dayjs(startDate).format("YYYY-MM-DD")}T00:00:00` : "",
+        end_date: endDate ? `${dayjs(endDate).format("YYYY-MM-DD")}T23:59:59` : "",
+        ...(platformFilters.length && {
+          meeting_url_contains: filters.platformFilters.join(",")
+        }),
+        ...(statusFilters.length && { status_type: statusFilters.join(",") }),
+        ...(userReportedErrorStatusFilters.length && {
+          user_reported_error_json: `${userReportedErrorStatusFilters.join(",")}`
+        }),
+        ...(errorCategoryFilters.length && {
+          status_category: errorCategoryFilters.join(",")
+        }),
+        ...(errorPriorityFilters.length && {
+          status_priority: errorPriorityFilters.join(",")
+        })
       }
 
-      if (startDate) {
-        queryParams.start_date = dayjs(startDate).format("YYYY-MM-DDTHH:mm:ss")
-      }
-
-      if (endDate) {
-        queryParams.end_date = dayjs(endDate).format("YYYY-MM-DDTHH:mm:ss")
-      }
-
-      if (filters.statusFilters.length > 0) {
-        queryParams.status_type = filters.statusFilters.join(",")
-      }
-
-      if (filters.platformFilters.length > 0) {
-        queryParams.meeting_url_contains = filters.platformFilters.join(",")
-      }
-
-      if (filters.userReportedErrorStatusFilters.length > 0) {
-        queryParams.user_reported_status = filters.userReportedErrorStatusFilters.join(",")
-      }
-      
-      if (filters.errorCategoryFilters && filters.errorCategoryFilters.length > 0) {
-        queryParams.status_category = filters.errorCategoryFilters.join(",")
-      }
-      
-      if (filters.errorPriorityFilters && filters.errorPriorityFilters.length > 0) {
-        queryParams.status_priority = filters.errorPriorityFilters.join(",")
-      }
-
-      // Use the real API instead of mock data
       return fetchBotStats(queryParams)
     },
-    staleTime: 1000 * 60 * 5,
-  })
-
-  const data = useMemo(() => {
-    if (!apiData?.bots) return null
-
-    const botsWithPlatform: FormattedBotData[] = apiData.bots.map((bot) => ({
+    select: (data) => {
+      const formattedBots: FormattedBotData[] = data.bots.map((bot) => ({
         ...bot,
-      platform: getPlatformFromUrl(bot.meeting_url) as any,
-    }))
-
-    const successfulBots = botsWithPlatform.filter((bot) => bot.status.type === "success")
-    const errorBots = botsWithPlatform.filter((bot) => bot.status.type === "error" || bot.status.type === "warning")
-
-    const platformCounts = new Map<string, number>()
-    botsWithPlatform.forEach((bot) => {
-      const count = platformCounts.get(bot.platform) || 0
-      platformCounts.set(bot.platform, count + 1)
-    })
-
-    const platformDistribution: PlatformDistribution[] = Array.from(platformCounts.entries()).map(
-      ([platform, count]) => ({
-        platform,
-        count,
-        percentage: (count / botsWithPlatform.length) * 100,
-      })
-    )
-
-    const errorTypeCounts = new Map<string, { count: number; category?: ErrorCategory; priority?: string }>()
-    errorBots.forEach((bot) => {
-      const errorType = bot.status.value
-      const current = errorTypeCounts.get(errorType) || { 
-        count: 0, 
-        category: bot.status.category as ErrorCategory,
-        priority: getMockPriorityForError(bot.status.category)
-      }
-      errorTypeCounts.set(errorType, { 
-        ...current,
-        count: current.count + 1 
-      })
-    })
-
-    const errorTypes: ErrorType[] = Array.from(errorTypeCounts.entries())
-      .map(([type, data]) => ({
-        type,
-        count: data.count,
-        percentage: (data.count / errorBots.length) * 100,
-        category: data.category,
-        priority: data.priority as any
+        platform: getPlatformFromUrl(bot.meeting_url)
       }))
-      .sort((a, b) => b.count - a.count)
 
-    const dailyStatsMap = new Map<string, {
-      totalBots: number;
-      errorBots: number;
-      platforms: Record<string, number>;
-    }>()
+      const successfulBots = formattedBots.filter(
+        (bot) => bot.status.type.toLowerCase() === "success"
+      )
+      const errorBots = formattedBots.filter((bot) =>
+        ["error", "warning"].includes(bot.status.type)
+      )
 
-    const now = new Date()
-    const thirtyDaysAgo = new Date(now)
-    thirtyDaysAgo.setDate(now.getDate() - 30)
+      const distribution = groupBy(formattedBots, "platform")
 
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(thirtyDaysAgo)
-      date.setDate(thirtyDaysAgo.getDate() + i)
-      const dateStr = date.toISOString().split("T")[0]
+      const platformDistribution: PlatformDistribution[] = Object.entries(distribution).map(
+        ([key, value]) => {
+          const successCount = value.filter(
+            (bot) => bot.status.type.toLowerCase() === "success"
+          ).length
+          const errorCount = value.filter((bot) => bot.status.type.toLowerCase() === "error").length
+          const warningCount = value.filter(
+            (bot) => bot.status.type.toLowerCase() === "warning"
+          ).length
+          const otherCount = value.length - successCount - errorCount - warningCount
 
-      const totalBots = Math.floor(Math.random() * 100) + 50
-      const errorBots = Math.floor(totalBots * (Math.random() * 0.3))
+          return {
+            platform: key,
+            count: value.length,
+            percentage: (value.length / formattedBots.length) * 100,
+            statusDistribution: {
+              success: {
+                count: successCount,
+                percentage: (successCount / value.length) * 100
+              },
+              error: {
+                count: errorCount,
+                percentage: (errorCount / value.length) * 100
+              },
+              warning: {
+                count: warningCount,
+                percentage: (warningCount / value.length) * 100
+              },
+              other: {
+                count: otherCount,
+                percentage: (otherCount / value.length) * 100
+              }
+            }
+          }
+        }
+      )
 
-      const platforms: Record<string, number> = {
-        "zoom": Math.floor(totalBots * 0.5),
-        "teams": Math.floor(totalBots * 0.3),
-        "google meet": Math.floor(totalBots * 0.15),
-        "unknown": Math.floor(totalBots * 0.05),
-      }
+      const statsByDate = groupBy(formattedBots, (bot) =>
+        dayjs(bot.created_at).format("YYYY-MM-DD")
+      )
 
-      dailyStatsMap.set(dateStr, {
-        totalBots,
-        errorBots,
-        platforms,
+      const dailyStats: DailyStats[] = Object.entries(statsByDate).map(([date, bots]) => {
+        const platformCounts = groupBy(bots, "platform")
+        return {
+          date,
+          totalBots: bots.length,
+          errorBots: bots.filter((bot) => bot.status.type.toLowerCase() === "error").length,
+          platforms: Object.fromEntries(
+            Object.entries(platformCounts).map(([platform, bots]) => [platform, bots.length])
+          )
+        }
       })
-    }
 
-    const dailyStats: DailyStats[] = Array.from(dailyStatsMap.entries())
-      .map(([date, stats]) => ({
-        date,
-        totalBots: stats.totalBots,
-        errorBots: stats.errorBots,
-        platforms: stats.platforms,
+      const errorCategories = groupBy(errorBots, "status.category")
+      const errorTypes: ErrorType[] = Object.entries(errorCategories).map(([key, value]) => ({
+        type: key,
+        count: value.length,
+        percentage: (value.length / errorBots.length) * 100
       }))
-      .sort((a, b) => (a.date < b.date ? -1 : 1))
 
-    const userReportedErrors: UserReportedErrorDistribution[] = [
-      {
-        status: "open",
-        count: errorBots.filter(bot => bot.user_reported_error?.status === "open").length || Math.floor(errorBots.length * 0.2),
-        percentage: 20
-      },
-      {
-        status: "in_progress",
-        count: errorBots.filter(bot => bot.user_reported_error?.status === "in_progress").length || Math.floor(errorBots.length * 0.3),
-        percentage: 30
-      },
-      {
-        status: "closed",
-        count: errorBots.filter(bot => bot.user_reported_error?.status === "closed").length || Math.floor(errorBots.length * 0.5),
-        percentage: 50
-      }
-    ]
+      // Transform error distribution data
+      const errorDistribution = groupBy(errorBots, "status.value")
+      const errorDistributionData = map(errorDistribution, (bots, value) => ({
+        name: value,
+        value: bots.length,
+        percentage: (bots.length / errorBots.length) * 100
+      }))
 
-    const errorsByDate = dailyStats.map(day => {
-      const totalErrors = day.errorBots
-      
-      const errorsByCategory: Record<ErrorCategory, number> = {
-        "system_error": Math.floor(totalErrors * 0.15),
-        "auth_error": Math.floor(totalErrors * 0.1),
-        "capacity_error": Math.floor(totalErrors * 0.05),
-        "connection_error": Math.floor(totalErrors * 0.2),
-        "permission_error": Math.floor(totalErrors * 0.1),
-        "input_error": Math.floor(totalErrors * 0.05),
-        "duplicate_error": Math.floor(totalErrors * 0.05),
-        "webhook_error": Math.floor(totalErrors * 0.1),
-        "api_error": Math.floor(totalErrors * 0.05),
-        "unknown_error": Math.floor(totalErrors * 0.05),
-        "stalled_error": Math.floor(totalErrors * 0.05),
-        "success": 0,
-        "pending": 0
-      }
-      
-      const errorsByPriority: Record<string, number> = {
-        "critical": Math.floor(totalErrors * 0.1),
-        "high": Math.floor(totalErrors * 0.2),
-        "medium": Math.floor(totalErrors * 0.4),
-        "low": Math.floor(totalErrors * 0.2),
-        "none": Math.floor(totalErrors * 0.1)
-      }
+      // Transform data for error table
+      const errorTableData = map(errorDistribution, (bots, value) => {
+        const platforms = groupBy(bots, "platform")
+        const platformCounts = Object.fromEntries(
+          Object.entries(platforms).map(([platform, platformBots]) => [
+            platform,
+            platformBots.length
+          ])
+        )
+
+        // Get status information from the first bot in the group as they all would have the same status
+        const { status } = bots[0]
+        const category = status.category || "unknown_error"
+        const details = status.details || `${category} error`
+
+        // Normalize error message and type for webhook and stalled errors
+        let normalizedType = value
+        let normalizedMessage = details
+
+        if (category === "webhook_error" && details.includes("Status:")) {
+          const statusMatch = details.match(/Status: (\d+)/)
+          if (statusMatch?.[1]) {
+            const statusCode = Number.parseInt(statusMatch[1], 10)
+            normalizedType = `Webhook Error (${statusCode})`
+            normalizedMessage = `Status: ${statusCode} - ${details}`
+          }
+        } else if (category === "stalled_error") {
+          const hoursMatch = details.match(/pending for (\d+\.?\d*) hours/)
+          if (hoursMatch?.[1]) {
+            const hours = Number.parseFloat(hoursMatch[1])
+            if (hours < 24) {
+              normalizedType = "Stalled (< 24h)"
+            } else if (hours < 48) {
+              normalizedType = "Stalled (24-48h)"
+            } else {
+              normalizedType = "Stalled (> 48h)"
+            }
+          }
+        }
+
+        // Determine priority based on category
+        const priority = getPriorityForError(category)
+
+        return {
+          type: normalizedType,
+          message: normalizedMessage,
+          category: allErrorCategories.find((c) => c.value === category)?.label || category,
+          priority,
+          platforms: platformCounts,
+          count: bots.length
+        }
+      })
 
       return {
-        date: day.date,
-        totalErrors,
-        errorsByCategory,
-        errorsByPriority
-      }
-    })
-
-    return {
-      has_more: apiData.has_more,
-      allBots: botsWithPlatform,
+        has_more: data.has_more,
+        allBots: formattedBots,
         successfulBots,
         errorBots,
         platformDistribution,
         dailyStats,
-      errorTypes,
-      userReportedErrors,
-      errorsByDate
-    }
-  }, [apiData])
+        errorTypes,
+        errorDistributionData,
+        errorTableData
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: true,
+    placeholderData: (previousData) => previousData
+  })
 
   return {
     data,
@@ -238,165 +213,6 @@ export function useBotStats({
     isError,
     error,
     isRefetching,
-  }
-}
-
-function getMockPriorityForError(category?: string): string {
-  switch (category) {
-    case 'system_error':
-    case 'stalled_error':
-      return 'critical'
-    case 'auth_error':
-    case 'capacity_error':
-    case 'connection_error':
-      return 'high'
-    case 'permission_error':
-    case 'input_error':
-    case 'duplicate_error':
-    case 'unknown_error':
-      return 'medium'
-    case 'webhook_error':
-    case 'api_error':
-      return 'low'
-    default:
-      return 'medium'
-  }
-}
-
-function getMockBotStats() {
-  const generateMockBot = (id: number): BotData => {
-    const isError = Math.random() > 0.7
-    const platforms = ["zoom", "teams", "google meet"]
-    const platformIndex = Math.floor(Math.random() * platforms.length)
-    const platform = platforms[platformIndex]
-
-    let meetingUrl = ""
-    switch (platform) {
-      case "zoom":
-        meetingUrl = `https://zoom.us/j/${Math.floor(Math.random() * 1000000)}`
-        break
-      case "teams":
-        meetingUrl = `https://teams.microsoft.com/l/meetup-join/meeting_${Math.floor(
-          Math.random() * 1000000
-        )}`
-        break
-      case "google meet":
-        meetingUrl = `https://meet.google.com/${Math.random()
-          .toString(36)
-          .substring(2, 8)}`
-        break
-      default:
-        meetingUrl = `https://example.com/meeting/${Math.floor(Math.random() * 1000000)}`
-    }
-
-    const statusType = isError ? (Math.random() > 0.3 ? "error" : "warning") : "success"
-    const statusCategory = isError 
-      ? getRandomErrorCategory()
-      : "success"
-    
-    return {
-      id,
-      account_id: Math.floor(Math.random() * 10) + 1,
-      meeting_url: meetingUrl,
-      created_at: new Date(
-        Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      session_id: `session_${id}`,
-      reserved: Math.random() > 0.8,
-      errors: isError ? "Some error occurred" : null,
-      ended_at: isError ? null : new Date().toISOString(),
-      mp4_s3_path: "",
-      uuid: `uuid_${id}`,
-      bot_param_id: id,
-      event_id: Math.floor(Math.random() * 100),
-      scheduled_bot_id: null,
-      diarization_v2: Math.random() > 0.5,
-      transcription_fails: isError ? Math.floor(Math.random() * 3) : null,
-      diarization_fails: isError ? Math.floor(Math.random() * 3) : null,
-      user_reported_error: {
-        status: Math.random() > 0.7 ? "open" : Math.random() > 0.5 ? "in_progress" : "closed",
-        messages: [],
-      },
-      params: {
-        bot_name: `Bot ${id}`,
-        bot_image: null,
-        speech_to_text_provider: "Default",
-        enter_message: null,
-        recording_mode: "gallery_view",
-        speech_to_text_api_key: null,
-        streaming_input: null,
-        streaming_output: null,
-        waiting_room_timeout: 300,
-        noone_joined_timeout: 600,
-        deduplication_key: null,
-        extra: {},
-        webhook_url: "https://example.com/webhook",
-        streaming_audio_frequency: null,
-        zoom_sdk_id: null,
-        zoom_sdk_pwd: null,
-      },
-      duration: Math.floor(Math.random() * 3600),
-      status: {
-        value: isError ? getErrorValueForCategory(statusCategory) : "Completed",
-        type: statusType,
-        details: isError ? "Error details here" : null,
-        sort_priority: isError ? Math.floor(Math.random() * 5) : 10,
-        category: statusCategory as any,
-      },
-    }
-  }
-
-  const bots = Array.from({ length: 100 }, (_, i) => generateMockBot(i + 1))
-
-  return {
-    has_more: false,
-    bots,
-  }
-}
-
-function getRandomErrorCategory(): string {
-  const categories = [
-    "system_error",
-    "auth_error",
-    "capacity_error",
-    "connection_error",
-    "permission_error",
-    "input_error",
-    "duplicate_error",
-    "webhook_error",
-    "api_error",
-    "unknown_error",
-    "stalled_error"
-  ]
-  
-  return categories[Math.floor(Math.random() * categories.length)]
-}
-
-function getErrorValueForCategory(category: string): string {
-  switch (category) {
-    case 'system_error':
-      return 'Internal Error'
-    case 'auth_error':
-      return 'Unauthorized'
-    case 'capacity_error':
-      return 'Quota Exceeded'
-    case 'connection_error':
-      return 'Connection Failed'
-    case 'permission_error':
-      return 'Bot Not Accepted'
-    case 'input_error':
-      return 'Invalid Meeting URL'
-    case 'duplicate_error':
-      return 'Meeting Already Started'
-    case 'webhook_error':
-      return 'Webhook Error'
-    case 'api_error':
-      return 'API Error'
-    case 'unknown_error':
-      return 'Unknown Error'
-    case 'stalled_error':
-      return 'Stalled'
-    default:
-      return 'Error'
+    refetch
   }
 }

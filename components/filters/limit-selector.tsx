@@ -68,16 +68,12 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
 
   return (
     <Select value={value.toString()} onValueChange={handleLimitChange}>
-      <SelectTrigger className="w-full h-12 px-5 text-base font-medium border-2 bg-primary/5 hover:bg-primary/10 transition-colors">
+      <SelectTrigger className="w-full">
         <SelectValue placeholder="Limit" />
       </SelectTrigger>
-      <SelectContent className="py-3">
+      <SelectContent>
         {limitOptions.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value.toString()}
-            className="px-5 py-3 text-base rounded-md hover:bg-primary/5"
-          >
+          <SelectItem key={option.value} value={option.value.toString()}>
             {option.label}
           </SelectItem>
         ))}
