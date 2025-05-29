@@ -18,6 +18,7 @@ import { PlatformPerformanceCard } from "@/components/analytics/platform-perform
 import { ErrorTableCard } from "@/components/analytics/error-table-card"
 import { MainTabs } from "@/components/ui/main-tabs"
 import ErrorAnalysis from "@/components/analytics/error-analysis"
+import Duration from "@/components/analytics/duration"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
 
@@ -99,6 +100,15 @@ export function Analytics() {
         )
       case "error-analysis":
         return <ErrorAnalysis timelineData={data.timelineData} />
+      case "duration":
+        return (
+          <Duration
+            durationTimelineData={data.durationTimelineData}
+            platformDurationData={data.platformDurationData}
+            durationDistributionData={data.durationDistributionData}
+            averageDuration={data.averageDuration}
+          />
+        )
       default:
         return null
     }

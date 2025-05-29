@@ -88,6 +88,12 @@ export function generateId(length = 8): string {
     .substring(2, 2 + length)
 }
 
+// Format duration in minutes
+export const formatDuration = (value: number) => {
+  const minutes = Math.round(value / 60)
+  return `${formatNumber(minutes)}m`
+}
+
 /**
  * Returns a color based on status type
  */

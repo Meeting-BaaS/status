@@ -59,7 +59,6 @@ export function PlatformPerformanceCard({ platformDistribution }: PlatformPerfor
         }
       ]
     }))
-    console.log("Chart Data:", data)
     return data
   }, [platformDistribution])
 

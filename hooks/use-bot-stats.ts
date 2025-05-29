@@ -383,14 +383,98 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         }
 
         // Convert to array format for the chart
-        return Array.from(dateMap.entries()).map(([date, priorities]) => ({
-          date,
-          total: Object.values(priorities).reduce((sum, count) => sum + count, 0),
-          priorities: Object.entries(priorities).map(([priority, count]) => ({
-            priority,
-            count
-          }))
-        }))
+        return Array.from(dateMap.entries()).map(([date, priorities]) => {
+          const total = Object.values(priorities).reduce((sum, count) => sum + count, 0)
+          return {
+            date,
+            total,
+            priorities: Object.entries(priorities).map(([priority, count]) => ({
+              priority,
+              count
+            }))
+          }
+        })
+      }
+
+      // Transform data for duration timeline
+      const transformDurationTimelineData = () => {
+        // Group bots by date
+        const botsByDate = groupBy(formattedBots, (bot) =>
+          dayjs(bot.created_at).format("YYYY-MM-DD")
+        )
+
+        // Calculate average duration and total bot time for each date
+        return Object.entries(botsByDate)
+          .map(([date, bots]) => {
+            // Filter bots with valid durations
+            const botsWithDuration = bots.filter((bot) => bot.duration && bot.duration > 0)
+
+            // If no bots have duration for this date, return null
+            if (botsWithDuration.length === 0) {
+              return null
+            }
+
+            const totalDuration = botsWithDuration.reduce((sum, bot) => sum + bot.duration, 0)
+            const averageDuration = totalDuration / botsWithDuration.length
+
+            return {
+              date,
+              averageDuration,
+              totalDuration,
+              botCount: botsWithDuration.length
+            }
+          })
+          .filter((data): data is NonNullable<typeof data> => data !== null) // Remove null entries
+          .sort((a, b) => dayjs(a.date).unix() - dayjs(b.date).unix())
+      }
+
+      // Transform data for platform duration
+      const transformPlatformDurationData = () => {
+        // Get bots with valid durations
+        const botsWithDuration = formattedBots.filter((bot) => bot.duration && bot.duration > 0)
+
+        // Group by platform
+        const platformGroups = groupBy(botsWithDuration, "platform")
+
+        // Calculate average duration for each platform
+        return Object.entries(platformGroups).map(([platform, bots]) => {
+          const totalDuration = bots.reduce((sum, bot) => sum + bot.duration, 0)
+          const averageDuration = totalDuration / bots.length
+
+          return {
+            name: platform,
+            value: averageDuration,
+            count: bots.length
+          }
+        })
+      }
+
+      // Transform data for duration distribution
+      const transformDurationDistributionData = () => {
+        // Get bots with valid durations
+        const botsWithDuration = formattedBots.filter((bot) => bot.duration && bot.duration > 0)
+
+        // Define duration ranges in seconds
+        const ranges = [
+          { min: 0, max: 15 * 60, label: "0-15m" },
+          { min: 15 * 60, max: 30 * 60, label: "15-30m" },
+          { min: 30 * 60, max: 45 * 60, label: "30-45m" },
+          { min: 45 * 60, max: 60 * 60, label: "45-60m" },
+          { min: 60 * 60, max: Number.POSITIVE_INFINITY, label: "60m+" }
+        ]
+
+        // Count bots in each range
+        return ranges.map((range) => {
+          const count = botsWithDuration.filter(
+            (bot) => bot.duration >= range.min && bot.duration < range.max
+          ).length
+
+          return {
+            range: range.label,
+            count,
+            percentage: (count / botsWithDuration.length) * 100
+          }
+        })
       }
 
       return {
@@ -403,7 +487,15 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         errorTypes,
         errorDistributionData,
         errorTableData,
-        timelineData: transformTimelineData()
+        timelineData: transformTimelineData(),
+        durationTimelineData: transformDurationTimelineData(),
+        platformDurationData: transformPlatformDurationData(),
+        durationDistributionData: transformDurationDistributionData(),
+        averageDuration:
+          formattedBots
+            .filter((bot) => bot.duration && bot.duration > 0)
+            .reduce((sum, bot) => sum + bot.duration, 0) /
+          formattedBots.filter((bot) => bot.duration && bot.duration > 0).length
       }
     },
     staleTime: 1000 * 60 * 5,

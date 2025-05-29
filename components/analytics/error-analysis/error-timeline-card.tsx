@@ -84,11 +84,15 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
 
     if (!active || !payload?.length) return null
 
+    // Filter out the total line from the main entries
+    const priorityEntries = payload.filter((entry) => entry.name !== "Total")
+    const totalEntry = payload.find((entry) => entry.name === "Total")
+
     return (
       <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
         <p className="mb-2 font-medium text-sm">{dayjs(label).format("D MMM YYYY")}</p>
         <div className="space-y-1">
-          {payload.map((entry) => (
+          {priorityEntries.map((entry) => (
             <div key={entry.name} className="flex items-center gap-2 text-xs">
               <div
                 className="h-2 w-2 rounded-full"
@@ -99,10 +103,14 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
             </div>
           ))}
           <div className="mt-1 border-t pt-1">
-            <div className="flex items-center justify-between font-medium text-xs">
-              <span>Total</span>
-              <span>
-                {formatNumber(payload.reduce((sum, entry) => sum + (entry.value as number), 0))}
+            <div className="flex items-center gap-2 text-xs">
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: "var(--destructive)" }}
+              />
+              <span className="capitalize">Total</span>
+              <span className="ml-auto font-medium">
+                {formatNumber((totalEntry?.value as number) || 0)}
               </span>
             </div>
           </div>
@@ -115,7 +123,7 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
     <Card className="dark:bg-baas-black">
       <CardHeader>
         <CardTitle>Error Timeline</CardTitle>
-        <CardDescription>Daily distribution of errors by priority</CardDescription>
+        <CardDescription>Error trends by priority over time</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-80">
@@ -127,8 +135,6 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
                   dataKey="date"
                   tickFormatter={(value) => dayjs(value).format("D MMM")}
                   tick={{ fontSize: "0.75rem" }}
-                  interval="preserveStartEnd"
-                  minTickGap={50}
                 />
                 <YAxis
                   tickFormatter={(value) => formatNumber(value)}
@@ -136,6 +142,16 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
                 />
                 <Tooltip content={ErrorTimelineTooltip} cursor={false} />
                 <Legend wrapperStyle={{ fontSize: "0.75rem", textTransform: "capitalize" }} />
+                {/* Total line */}
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="var(--destructive)"
+                  name="Total"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                {/* Priority lines */}
                 {Object.entries(chartConfig).map(([priority, { color }]) => (
                   <Line
                     key={priority}
@@ -143,8 +159,9 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
                     dataKey={priority}
                     stroke={color}
                     name={priority}
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     dot={false}
+                    strokeDasharray="3 3"
                   />
                 ))}
               </LineChart>
