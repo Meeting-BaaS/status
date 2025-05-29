@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
-import { cn, formatNumber, formatPercentage } from "@/lib/utils"
+import { formatNumber } from "@/lib/utils"
 import { useMemo } from "react"
 import {
   Cell,
