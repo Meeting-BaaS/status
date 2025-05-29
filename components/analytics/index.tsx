@@ -19,6 +19,7 @@ import { ErrorTableCard } from "@/components/analytics/error-table-card"
 import { MainTabs } from "@/components/ui/main-tabs"
 import ErrorAnalysis from "@/components/analytics/error-analysis"
 import Duration from "@/components/analytics/duration"
+import IssueReports from "@/components/analytics/issue-reports"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
 
@@ -107,6 +108,13 @@ export function Analytics() {
             platformDurationData={data.platformDurationData}
             durationDistributionData={data.durationDistributionData}
             averageDuration={data.averageDuration}
+          />
+        )
+      case "issue-reports":
+        return (
+          <IssueReports
+            statusCounts={data.issueReportData.statusCounts}
+            timelineData={data.issueReportData.timelineData}
           />
         )
       default:

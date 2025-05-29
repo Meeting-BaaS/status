@@ -87,30 +87,28 @@ export function DurationTimelineCard({ durationTimelineData }: DurationTimelineC
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis
                   dataKey="date"
+                  className="text-xs"
                   tickFormatter={(value) => dayjs(value).format("D MMM")}
-                  tick={{ fontSize: "0.75rem" }}
                 />
                 <YAxis
                   yAxisId="left"
+                  className="text-xs"
                   tickFormatter={formatDuration}
-                  tick={{ fontSize: "0.75rem" }}
                   label={{
                     value: "Avg. Duration",
                     angle: -90,
-                    position: "insideLeft",
-                    style: { fontSize: "0.75rem" }
+                    position: "insideLeft"
                   }}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   tickFormatter={formatNumber}
-                  tick={{ fontSize: "0.75rem" }}
+                  className="text-xs"
                   label={{
                     value: "Total Bots",
                     angle: 90,
-                    position: "insideRight",
-                    style: { fontSize: "0.75rem" }
+                    position: "insideRight"
                   }}
                 />
                 <Tooltip content={DurationTimelineTooltip} cursor={false} />

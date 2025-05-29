@@ -134,12 +134,9 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) => dayjs(value).format("D MMM")}
-                  tick={{ fontSize: "0.75rem" }}
+                  className="text-xs"
                 />
-                <YAxis
-                  tickFormatter={(value) => formatNumber(value)}
-                  tick={{ fontSize: "0.75rem" }}
-                />
+                <YAxis tickFormatter={(value) => formatNumber(value)} className="text-xs" />
                 <Tooltip content={ErrorTimelineTooltip} cursor={false} />
                 <Legend wrapperStyle={{ fontSize: "0.75rem", textTransform: "capitalize" }} />
                 {/* Total line */}

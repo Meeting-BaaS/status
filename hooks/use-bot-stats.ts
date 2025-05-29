@@ -477,6 +477,60 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         })
       }
 
+      // Transform data for issue reports
+      const transformIssueReportData = () => {
+        // Get all bots with user reported errors
+        const botsWithUserReports = formattedBots.filter(
+          (bot) => bot.user_reported_error && typeof bot.user_reported_error === "object"
+        )
+
+        // Count by status
+        const statusCounts = {
+          open: 0,
+          in_progress: 0,
+          closed: 0
+        }
+
+        for (const bot of botsWithUserReports) {
+          const report = bot.user_reported_error
+          const status = report.status?.toLowerCase() || "open"
+          if (status in statusCounts) {
+            statusCounts[status as keyof typeof statusCounts]++
+          }
+        }
+
+        // Transform for timeline
+        const timelineData = Object.entries(
+          groupBy(botsWithUserReports, (bot) => dayjs(bot.created_at).format("YYYY-MM-DD"))
+        )
+          .map(([date, bots]) => {
+            const counts = {
+              open: 0,
+              in_progress: 0,
+              closed: 0
+            }
+
+            for (const bot of bots) {
+              const report = bot.user_reported_error
+              const status = report.status?.toLowerCase() || "open"
+              if (status in counts) {
+                counts[status as keyof typeof counts]++
+              }
+            }
+
+            return {
+              date,
+              ...counts
+            }
+          })
+          .sort((a, b) => dayjs(a.date).unix() - dayjs(b.date).unix())
+
+        return {
+          statusCounts,
+          timelineData
+        }
+      }
+
       return {
         has_more: data.has_more,
         allBots: formattedBots,
@@ -491,6 +545,7 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         durationTimelineData: transformDurationTimelineData(),
         platformDurationData: transformPlatformDurationData(),
         durationDistributionData: transformDurationDistributionData(),
+        issueReportData: transformIssueReportData(),
         averageDuration:
           formattedBots
             .filter((bot) => bot.duration && bot.duration > 0)

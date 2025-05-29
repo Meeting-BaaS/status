@@ -64,10 +64,10 @@ export function MeetingHoursChart({ data }: MeetingHoursChartProps) {
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: "0.75rem" }}
+              className="text-xs"
               tickFormatter={(date) => dayjs(date).format("D MMM")}
             />
-            <YAxis tick={{ fontSize: "0.75rem" }} />
+            <YAxis className="text-xs" />
             <Tooltip
               content={MeetingHoursTooltip}
               cursor={false}
