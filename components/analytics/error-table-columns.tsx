@@ -53,7 +53,7 @@ export const errorTableColumns: ColumnDef<ErrorTableData>[] = [
   },
   {
     accessorKey: "message",
-    header: ({ column }) => <SortableHeader column={column} title="Error Message" />,
+    header: ({ column }) => <SortableHeader column={column} title="Aggregated Error Message" />,
     cell: ({ row }) => {
       const { message, priority, category } = row.original
       return (

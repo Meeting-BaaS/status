@@ -156,24 +156,130 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         let normalizedType = value
         let normalizedMessage = details
 
-        if (category === "webhook_error" && details.includes("Status:")) {
-          const statusMatch = details.match(/Status: (\d+)/)
-          if (statusMatch?.[1]) {
-            const statusCode = Number.parseInt(statusMatch[1], 10)
-            normalizedType = `Webhook Error (${statusCode})`
-            normalizedMessage = `Status: ${statusCode} - ${details}`
+        if (category === "webhook_error") {
+          // Group webhook errors by their status codes
+          const webhookGroups: Record<string, { count: number; messages: string[] }> = {
+            other: { count: 0, messages: [] }
+          }
+
+          // Extract status codes from each bot's details
+          for (const bot of bots) {
+            const statusMatch = bot.status.details?.match(/Status: (\d+)/)
+            if (statusMatch?.[1]) {
+              const statusCode = statusMatch[1]
+              if (!webhookGroups[statusCode]) {
+                webhookGroups[statusCode] = { count: 0, messages: [] }
+              }
+              webhookGroups[statusCode].count++
+              webhookGroups[statusCode].messages.push(bot.status.details || "")
+            } else {
+              // Handle webhook errors without status codes
+              webhookGroups.other.count++
+              webhookGroups.other.messages.push(bot.status.details || "Webhook Error")
+            }
+          }
+
+          // Create separate entries for each status code group
+          const groups = Object.entries(webhookGroups)
+            .filter(([_, { count }]) => count > 0) // Only include groups with errors
+            .map(([statusCode, { count, messages }]) => {
+              const type =
+                statusCode === "other" ? "Webhook Error (Other)" : `Webhook Error (${statusCode})`
+              const message =
+                statusCode === "other"
+                  ? messages[0] // Use the actual error message for other errors
+                  : `Status: ${statusCode} - ${messages[0]}` // Use first message as template for status errors
+
+              return {
+                type,
+                message,
+                count,
+                platforms: platformCounts
+              }
+            })
+
+          // If we have multiple groups, we need to split this into multiple entries
+          if (groups.length > 1) {
+            return groups.map((group) => ({
+              ...group,
+              category: allErrorCategories.find((c) => c.value === category)?.label || category,
+              priority: getPriorityForError(category)
+            }))
+          }
+
+          // If we only have one group, use its data
+          if (groups.length === 1) {
+            normalizedType = groups[0].type
+            normalizedMessage = groups[0].message
           }
         } else if (category === "stalled_error") {
-          const hoursMatch = details.match(/pending for (\d+\.?\d*) hours/)
-          if (hoursMatch?.[1]) {
-            const hours = Number.parseFloat(hoursMatch[1])
-            if (hours < 24) {
-              normalizedType = "Stalled (< 24h)"
-            } else if (hours < 48) {
-              normalizedType = "Stalled (24-48h)"
-            } else {
-              normalizedType = "Stalled (> 48h)"
+          // Group stalled errors by their time ranges
+          const stalledGroups = {
+            under24h: [] as number[],
+            under48h: [] as number[],
+            over48h: [] as number[]
+          }
+
+          // Extract hours from each bot's details
+          for (const bot of bots) {
+            const hoursMatch = bot.status.details?.match(/pending for (\d+\.?\d*) hours/)
+            if (hoursMatch?.[1]) {
+              const hours = Number.parseFloat(hoursMatch[1])
+              if (hours < 24) {
+                stalledGroups.under24h.push(hours)
+              } else if (hours < 48) {
+                stalledGroups.under48h.push(hours)
+              } else {
+                stalledGroups.over48h.push(hours)
+              }
             }
+          }
+
+          // Create separate entries for each non-empty group
+          const groups = Object.entries(stalledGroups)
+            .filter(([_, values]) => values.length > 0)
+            .map(([key, values]) => {
+              const avgHours = values.reduce((sum, hours) => sum + hours, 0) / values.length
+              const formattedHours = avgHours.toFixed(1)
+              let type: string
+
+              switch (key) {
+                case "under24h":
+                  type = "Stalled (< 24h)"
+                  break
+                case "under48h":
+                  type = "Stalled (24-48h)"
+                  break
+                case "over48h":
+                  type = "Stalled (> 48h)"
+                  break
+                default:
+                  type = "Stalled"
+              }
+
+              const message = `Bot${values.length > 1 ? "s" : ""} has been pending for an average of ${formattedHours} hours`
+
+              return {
+                type,
+                message,
+                count: values.length,
+                platforms: platformCounts
+              }
+            })
+
+          // If we have multiple groups, we need to split this into multiple entries
+          if (groups.length > 1) {
+            return groups.map((group) => ({
+              ...group,
+              category: allErrorCategories.find((c) => c.value === category)?.label || category,
+              priority: getPriorityForError(category)
+            }))
+          }
+
+          // If we only have one group, use its data
+          if (groups.length === 1) {
+            normalizedType = groups[0].type
+            normalizedMessage = groups[0].message
           }
         }
 
@@ -188,7 +294,7 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
           platforms: platformCounts,
           count: bots.length
         }
-      })
+      }).flat() // Flatten the array in case we have multiple stalled error entries
 
       return {
         has_more: data.has_more,

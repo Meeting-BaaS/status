@@ -67,7 +67,7 @@ export const filtersFields = [
   {
     name: "errorCategoryFilters",
     label: "Error Category",
-    options: allErrorCategories
+    options: allErrorCategories.sort((a, b) => a.label.localeCompare(b.label))
   },
   {
     name: "errorPriorityFilters",
