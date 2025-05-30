@@ -9,7 +9,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   type TooltipProps as RechartsTooltipProps
 } from "recharts"
 import { scaleOrdinal } from "d3-scale"
@@ -21,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { AnimatedNumber } from "@/components/ui/animated-number"
 import type { ErrorDistribution } from "@/lib/types"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { CheckSquare, Square, RotateCcw } from "lucide-react"
 
 interface ErrorDistributionCardProps {
   errorDistributionData: ErrorDistribution[]
@@ -54,8 +56,14 @@ export function ErrorDistributionCard({
   errorDistributionData,
   totalErrors
 }: ErrorDistributionCardProps) {
-  const { selectedErrorValues, addErrorValue, removeErrorValue, selectAll, selectNone } =
-    useSelectedErrorContext()
+  const {
+    selectedErrorValues,
+    addErrorValue,
+    removeErrorValue,
+    selectAll,
+    selectNone,
+    selectDefault
+  } = useSelectedErrorContext()
   const [filteredData, setFilteredData] = useState(errorDistributionData)
   const [filteredTotal, setFilteredTotal] = useState(totalErrors)
 
@@ -148,7 +156,7 @@ export function ErrorDistributionCard({
                         <Cell key={entry.name} fill={colorScale(entry.name) as string} />
                       ))}
                     </Pie>
-                    <Tooltip
+                    <RechartsTooltip
                       content={ErrorDistributionTooltip}
                       cursor={false}
                       wrapperStyle={{ outline: "none", zIndex: 10 }}
@@ -184,24 +192,51 @@ export function ErrorDistributionCard({
                     : `${selectedErrorValues.length} of ${errorDistributionData.length} available error types selected`}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={selectedErrorValues.length === errorDistributionData.length}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectNone}
-                  disabled={selectedErrorValues.length === 0}
-                >
-                  Select None
-                </Button>
-              </div>
+              <TooltipProvider>
+                <div className="flex gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSelectAll}
+                        disabled={selectedErrorValues.length === errorDistributionData.length}
+                        aria-label="Select All"
+                      >
+                        <CheckSquare />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Select All</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSelectNone}
+                        disabled={selectedErrorValues.length === 0}
+                        aria-label="Select None"
+                      >
+                        <Square />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Select None</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={selectDefault}
+                        aria-label="Reset to Default Selection"
+                      >
+                        <RotateCcw />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset to Default Selection</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             </div>
             <ScrollArea className="h-80 md:pr-4">
               <div className="space-y-2">

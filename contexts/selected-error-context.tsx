@@ -4,6 +4,18 @@ import { createContext, useState, useEffect, type ReactNode, useCallback, useMem
 import type { ErrorDistribution, FormattedBotData } from "@/lib/types"
 import { isEqual } from "lodash-es"
 
+export const SELECTED_ERROR_STORAGE_KEY = "analytics-selected-errors"
+
+// Non-critical errors that should be excluded from default selection
+const NON_CRITICAL_ERRORS = [
+  "Bot Not Accepted",
+  "Insufficient Tokens",
+  "Invalid Meeting URL",
+  "Meeting Already Started",
+  "Meeting Start Timeout",
+  "Webhook Error"
+]
+
 interface SelectedErrorContextType {
   selectedErrorValues: string[]
   setSelectedErrorValues: (values: string[]) => void
@@ -12,6 +24,7 @@ interface SelectedErrorContextType {
   removeErrorValue: (value: string) => void
   selectAll: (values: string[]) => void
   selectNone: () => void
+  selectDefault: () => void
   filteredBots: FormattedBotData[]
   botsFilteredByError: boolean
 }
@@ -33,7 +46,29 @@ export function SelectedErrorProvider({
     () => initialErrorDistribution.map((item) => item.name),
     [initialErrorDistribution]
   )
-  const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(allErrorValues)
+
+  // Get default error values (excluding non-critical errors)
+  const defaultErrorValues = useMemo(
+    () => allErrorValues.filter((value) => !NON_CRITICAL_ERRORS.includes(value)),
+    [allErrorValues]
+  )
+
+  // Initialize from localStorage if available, otherwise use defaultErrorValues
+  const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(() => {
+    if (typeof window === "undefined") return defaultErrorValues
+
+    const stored = localStorage.getItem(SELECTED_ERROR_STORAGE_KEY)
+    if (!stored) return defaultErrorValues
+
+    try {
+      const parsed = JSON.parse(stored) as string[]
+      // Validate stored values against available error types
+      return parsed.filter((value) => allErrorValues.includes(value))
+    } catch {
+      return defaultErrorValues
+    }
+  })
+
   const [filteredBots, setFilteredBots] = useState<FormattedBotData[]>(allBots)
 
   const getFilteredBots = useCallback(
@@ -50,6 +85,36 @@ export function SelectedErrorProvider({
     [allBots]
   )
 
+  // Helper function to update selected values
+  const updateSelectedValues = useCallback(
+    (newValues: string[]) => {
+      setSelectedErrorValues(newValues)
+      setFilteredBots(getFilteredBots(newValues))
+      localStorage.setItem(SELECTED_ERROR_STORAGE_KEY, JSON.stringify(newValues))
+    },
+    [getFilteredBots]
+  )
+
+  // Listen for changes in other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SELECTED_ERROR_STORAGE_KEY && e.newValue) {
+        try {
+          const newValues = JSON.parse(e.newValue) as string[]
+          // Validate the new values against available error types
+          const validValues = newValues.filter((value) => allErrorValues.includes(value))
+          updateSelectedValues(validValues)
+        } catch {
+          // If parsing fails, reset to all values
+          updateSelectedValues(allErrorValues)
+        }
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [allErrorValues, updateSelectedValues])
+
   // Update filtered bots when allBots changes
   useEffect(() => {
     setFilteredBots(getFilteredBots(selectedErrorValues))
@@ -63,36 +128,34 @@ export function SelectedErrorProvider({
     )
 
     if (validSelectedValues.length !== selectedErrorValues.length) {
-      setSelectedErrorValues(validSelectedValues)
-      setFilteredBots(getFilteredBots(validSelectedValues))
+      updateSelectedValues(validSelectedValues)
     }
-  }, [initialErrorDistribution, selectedErrorValues, getFilteredBots])
+  }, [initialErrorDistribution, selectedErrorValues, updateSelectedValues])
 
   const addErrorValue = (value: string) => {
     const newSelectedValues = [...selectedErrorValues, value]
-    setSelectedErrorValues(newSelectedValues)
-    setFilteredBots(getFilteredBots(newSelectedValues))
+    updateSelectedValues(newSelectedValues)
   }
 
   const removeErrorValue = (value: string) => {
     const newSelectedValues = selectedErrorValues.filter((v) => v !== value)
-    setSelectedErrorValues(newSelectedValues)
-    setFilteredBots(getFilteredBots(newSelectedValues))
+    updateSelectedValues(newSelectedValues)
   }
 
   const reset = () => {
-    setSelectedErrorValues(allErrorValues)
-    setFilteredBots(getFilteredBots(allErrorValues))
+    updateSelectedValues(allErrorValues)
   }
 
   const selectAll = (values: string[]) => {
-    setSelectedErrorValues(values)
-    setFilteredBots(getFilteredBots(values))
+    updateSelectedValues(values)
   }
 
   const selectNone = () => {
-    setSelectedErrorValues([])
-    setFilteredBots(getFilteredBots([]))
+    updateSelectedValues([])
+  }
+
+  const selectDefault = () => {
+    updateSelectedValues(defaultErrorValues)
   }
 
   const botsFilteredByError = useMemo(
@@ -110,6 +173,7 @@ export function SelectedErrorProvider({
         removeErrorValue,
         selectAll,
         selectNone,
+        selectDefault,
         filteredBots,
         botsFilteredByError
       }}

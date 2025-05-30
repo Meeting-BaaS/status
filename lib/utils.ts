@@ -205,3 +205,9 @@ export const platformColors = {
   "google meet": platformGradients["google-meet"].middle,
   unknown: platformGradients.unknown.middle
 }
+
+export function isMeetingBaasUser(email?: string) {
+  const domain = process.env.NEXT_PUBLIC_BASE_DOMAIN || "meetingbaas.com"
+  if (!email) return false
+  return email.endsWith(`@${domain}`)
+}
