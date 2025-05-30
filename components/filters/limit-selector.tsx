@@ -6,6 +6,8 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { useEffect } from "react"
+import { isMeetingBaasUser } from "@/lib/utils"
+import { useSession } from "@/hooks/use-session"
 
 export const LIMIT_STORAGE_KEY = "analytics-limit"
 
@@ -14,7 +16,7 @@ interface LimitSelectorProps {
   onChange: (value: number) => void
 }
 
-export const limitOptions = [
+export const baseLimitOptions = [
   {
     label: "Last 50 bots",
     value: 50
@@ -41,7 +43,29 @@ export const limitOptions = [
   }
 ]
 
+// Additional limit options for Meeting Baas users
+const additionalLimitOptions = [
+  {
+    label: "Last 5000 bots",
+    value: 5000
+  }
+]
+
+export const allLimitOptions = [...baseLimitOptions, ...additionalLimitOptions]
+
 export function LimitSelector({ value, onChange }: LimitSelectorProps) {
+  const session = useSession()
+  const isBaasUser = isMeetingBaasUser(session?.user?.email)
+  const limitOptions = isBaasUser ? allLimitOptions : baseLimitOptions
+
+  // Reset to default if current limit is not valid for the user
+  useEffect(() => {
+    if (session?.user?.email && !limitOptions.some((option) => option.value === value)) {
+      onChange(baseLimitOptions[0].value)
+      localStorage.setItem(LIMIT_STORAGE_KEY, baseLimitOptions[0].value.toString())
+    }
+  }, [session?.user?.email, limitOptions, value, onChange])
+
   // Listen for changes in other tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -55,7 +79,7 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
 
     window.addEventListener("storage", handleStorageChange)
     return () => window.removeEventListener("storage", handleStorageChange)
-  }, [onChange])
+  }, [onChange, limitOptions])
 
   // Function to handle page size changes
   const handleLimitChange = (newValue: string) => {

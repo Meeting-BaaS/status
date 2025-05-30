@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSearchParams } from "next/navigation"
-import { LIMIT_STORAGE_KEY, limitOptions } from "@/components/filters/limit-selector"
+import { LIMIT_STORAGE_KEY, allLimitOptions } from "@/components/filters/limit-selector"
 import { updateSearchParams, validateDateRange } from "@/lib/search-params"
 import { validateFilterValues } from "@/lib/search-params"
 import type { FilterState } from "@/lib/types"
@@ -38,7 +38,7 @@ const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"
   loading: Loading
 })
 
-export const DEFAULT_LIMIT = limitOptions[0].value
+export const DEFAULT_LIMIT = allLimitOptions[0].value
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -56,7 +56,7 @@ export function Analytics() {
     // Initialize from localStorage if available, otherwise use default
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(LIMIT_STORAGE_KEY)
-      return stored && limitOptions.some((option) => option.value === Number(stored))
+      return stored && allLimitOptions.some((option) => option.value === Number(stored))
         ? Number(stored)
         : DEFAULT_LIMIT
     }
@@ -156,6 +156,8 @@ export function Analytics() {
             setLimit={setLimit}
             refetch={refetch}
             isRefetching={isRefetching}
+            firstBotDate={data?.dateRange?.firstBotDate}
+            lastBotDate={data?.dateRange?.lastBotDate}
           />
           {!data || data.allBots.length === 0 ? (
             <div className="flex h-96 items-center justify-center">

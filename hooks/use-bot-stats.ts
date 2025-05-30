@@ -64,6 +64,10 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
       }))
       const { errorDistribution, errorBots } = filterAndGroupErrorBots(formattedBots)
 
+      // Get the date range from the first and last bot
+      const firstBotDate = formattedBots[0]?.created_at
+      const lastBotDate = formattedBots[formattedBots.length - 1]?.created_at
+
       // Bot distribution by platform
       const platformDistribution = getPlatformDistribution(formattedBots)
 
@@ -100,7 +104,8 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         platformDurationData,
         durationDistributionData,
         issueReportData,
-        averageDuration: calculateAverageDuration(formattedBots)
+        averageDuration: calculateAverageDuration(formattedBots),
+        dateRange: firstBotDate && lastBotDate ? { firstBotDate, lastBotDate } : null
       }
     },
     staleTime: 1000 * 60 * 5,

@@ -1,5 +1,6 @@
 import { AdditionalFilters } from "@/components/filters/additional-filters"
 import { DateRangeFilter } from "@/components/filters/date-range-filter"
+import { DateRangeInfo } from "@/components/filters/date-range-info"
 import type { FilterState } from "@/lib/types"
 import { Loader2, RefreshCw } from "lucide-react"
 import type { DateRangeType } from "react-tailwindcss-datepicker"
@@ -15,6 +16,8 @@ interface FiltersProps {
   setLimit: (limit: number) => void
   refetch: () => void
   isRefetching: boolean
+  firstBotDate?: string
+  lastBotDate?: string
 }
 
 export default function Filters({
@@ -25,21 +28,33 @@ export default function Filters({
   limit,
   setLimit,
   refetch,
-  isRefetching
+  isRefetching,
+  firstBotDate,
+  lastBotDate
 }: FiltersProps) {
   return (
     <div className="my-4 flex flex-col justify-between gap-4 md:flex-row">
-      <div className="flex w-full items-center gap-2 md:w-1/2">
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => refetch()}
-          disabled={isRefetching}
-          aria-label={isRefetching ? "Refreshing data" : "Refresh data"}
-        >
-          {isRefetching ? <Loader2 className="animate-spin text-primary" /> : <RefreshCw />}
-        </Button>
+      <div className="flex w-full flex-col gap-2 md:w-1/2">
+        <div className="flex items-center gap-2">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            aria-label={isRefetching ? "Refreshing data" : "Refresh data"}
+          >
+            {isRefetching ? <Loader2 className="animate-spin text-primary" /> : <RefreshCw />}
+          </Button>
+        </div>
+        {firstBotDate && lastBotDate && (
+          <DateRangeInfo
+            firstBotDate={firstBotDate}
+            lastBotDate={lastBotDate}
+            limit={limit}
+            isRefetching={isRefetching}
+          />
+        )}
       </div>
       <div className="flex w-full items-center gap-2 md:w-1/3 lg:w-1/4 xl:w-1/5">
         <LimitSelector value={limit} onChange={setLimit} />
