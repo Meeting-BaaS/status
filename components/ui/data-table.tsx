@@ -23,9 +23,10 @@ import {
   TableRow
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { SortDropdown } from "@/components/ui/sort-dropdown"
+import { useSelectedBots } from "@/hooks/use-selected-bots"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -59,6 +60,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>(defaultSort)
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const { selectedBots } = useSelectedBots()
 
   const handleSortingChange: OnChangeFn<SortingState> = (updaterOrValue) => {
     const newSorting = typeof updaterOrValue === "function" 
@@ -85,6 +87,12 @@ export function DataTable<TData, TValue>({
       rowSelection
     }
   })
+
+  useEffect(() => {
+    if (selectedBots.length === 0) {
+      table.resetRowSelection()
+    }
+  }, [selectedBots])
 
   const handleRowClick = (row: Row<TData>) => {
     if (enableRowSelection) {
