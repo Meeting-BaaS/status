@@ -201,10 +201,38 @@ function processStalledErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] 
       const avgHours = values.reduce((sum, hours) => sum + hours, 0) / values.length
       const formattedHours = avgHours.toFixed(1)
       const type = getStalledErrorType(avgHours)
-      const message = `Bot${values.length > 1 ? "s" : ""} has been pending for an average of ${formattedHours} hours`
+      const message = `${values.length > 1 ? "Bots have" : "Bot has"} been pending for an average of ${formattedHours} hours`
 
       return { type, message, bots }
     })
+}
+
+/**
+ * Process unknown errors and group them by their details
+ * @param bots - Array of bots with unknown errors
+ * @returns Array of normalized error groups for unknown errors
+ */
+function processUnknownErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] {
+  // Group bots by their error details
+  const unknownGroups: Record<string, { messages: string[]; bots: FormattedBotData[] }> = {}
+
+  // Group bots by their error details
+  for (const bot of bots) {
+    const details = bot.status.details || "Unknown error"
+    if (!unknownGroups[details]) {
+      unknownGroups[details] = { messages: [], bots: [] }
+    }
+
+    unknownGroups[details].messages.push(details)
+    unknownGroups[details].bots.push(bot)
+  }
+
+  // Convert groups to normalized format
+  return Object.entries(unknownGroups).map(([details, { messages, bots }]) => ({
+    type: "Unknown Error",
+    message: messages[0],
+    bots
+  }))
 }
 
 /**
@@ -244,12 +272,20 @@ export function getErrorTable(
     const details = status.details || `${category} error`
 
     // Process based on error category
-    const normalizedGroups =
-      category === "webhook_error"
-        ? processWebhookErrors(bots)
-        : category === "stalled_error"
-          ? processStalledErrors(bots)
-          : [{ type: value, message: details, bots }]
+    let normalizedGroups: NormalizedErrorGroup[]
+    switch (category) {
+      case "webhook_error":
+        normalizedGroups = processWebhookErrors(bots)
+        break
+      case "stalled_error":
+        normalizedGroups = processStalledErrors(bots)
+        break
+      case "unknown_error":
+        normalizedGroups = processUnknownErrors(bots)
+        break
+      default:
+        normalizedGroups = [{ type: value, message: details, bots }]
+    }
 
     return normalizedGroups.map((group) => createErrorTableEntry(group, value, category))
   })

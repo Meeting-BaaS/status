@@ -113,17 +113,6 @@ export function DurationDistributionCard({
                   cursor={false}
                   wrapperStyle={{ outline: "none", zIndex: 10 }}
                 />
-                <ReferenceLine
-                  x={averageDuration}
-                  stroke="currentColor"
-                  strokeDasharray="3 3"
-                  label={{
-                    value: "Avg",
-                    position: "top",
-                    fill: "currentColor",
-                    className: "text-xs"
-                  }}
-                />
                 <Bar
                   dataKey="count"
                   fill="currentColor"
