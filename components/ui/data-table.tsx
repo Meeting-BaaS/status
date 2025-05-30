@@ -9,7 +9,8 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable
+  useReactTable,
+  type OnChangeFn
 } from "@tanstack/react-table"
 
 import {
@@ -21,17 +22,9 @@ import {
   TableRow
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
-import { ChevronDown } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { SortDropdown } from "@/components/ui/sort-dropdown"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -39,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   defaultSort?: SortingState
   defaultColumnVisibility?: VisibilityState
   sortOptions?: { label: string; value: string }[]
+  onSortingChange?: OnChangeFn<SortingState>
 }
 
 export function DataTable<TData, TValue>({
@@ -46,18 +40,27 @@ export function DataTable<TData, TValue>({
   data,
   defaultSort = [],
   defaultColumnVisibility = {},
-  sortOptions
+  sortOptions,
+  onSortingChange
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(defaultSort)
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updaterOrValue) => {
+    const newSorting = typeof updaterOrValue === "function" 
+      ? updaterOrValue(sorting)
+      : updaterOrValue
+    setSorting(newSorting)
+    onSortingChange?.(updaterOrValue)
+  }
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getSortedRowModel: getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -71,33 +74,11 @@ export function DataTable<TData, TValue>({
   return (
     <div>
       {sortOptions && (
-        <div className="md:-mt-16 -mt-4 mb-4 flex items-center justify-end md:mb-8">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="md:ml-auto">
-                Default Sort <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuRadioGroup
-                value={
-                  sorting[0]?.id
-                    ? `${sorting[0].id}-${sorting[0].desc ? "desc" : "asc"}`
-                    : undefined
-                }
-                onValueChange={(value) => {
-                  table.setSorting([{ id: value.split("-")[0], desc: value.endsWith("-desc") }])
-                }}
-              >
-                {sortOptions.map((option) => (
-                  <DropdownMenuRadioItem key={option.value} value={option.value}>
-                    {option.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <SortDropdown
+          sortOptions={sortOptions}
+          sorting={sorting}
+          onSortingChange={handleSortingChange}
+        />
       )}
       <div>
         <Table>

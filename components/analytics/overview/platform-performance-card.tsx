@@ -126,7 +126,7 @@ export function PlatformPerformanceCard({ platformDistribution }: PlatformPerfor
           Bot Performance
           <SelectedErrorBadge />
         </CardTitle>
-        <CardDescription>Success rate across platforms</CardDescription>
+        <CardDescription className="-mt-1.5">Success rate across platforms</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="relative h-64">

@@ -130,7 +130,7 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
           Error Timeline
           <SelectedErrorBadge />
         </CardTitle>
-        <CardDescription>Error trends by priority over time</CardDescription>
+        <CardDescription className="-mt-1.5">Error trends by priority over time</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-80">

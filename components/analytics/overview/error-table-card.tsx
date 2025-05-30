@@ -5,10 +5,12 @@ import {
   type ErrorTableData
 } from "@/components/analytics/overview/error-table-columns"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
-import { useState } from "react"
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { filterAndGroupErrorBots, getErrorTable } from "@/lib/format-bot-stats"
 import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
+import type { SortingState } from "@tanstack/react-table"
+
+export const ERROR_TABLE_SORT_STORAGE_KEY = "analytics-error-table-sort"
 
 interface ErrorTableCardProps {
   data: ErrorTableData[]
@@ -22,15 +24,65 @@ const sortOptions = [
   { label: "Priority (Lowest)", value: "priority-asc" }
 ]
 
+// Convert sort option string to SortingState
+const getSortState = (sortOption: string): SortingState => {
+  const [id, direction] = sortOption.split("-")
+  return [{ id, desc: direction === "desc" }]
+}
+
+// Convert SortingState to sort option string
+const getSortOption = (sorting: SortingState): string => {
+  if (!sorting.length) return "count-desc"
+  const { id, desc } = sorting[0]
+  return `${id}-${desc ? "desc" : "asc"}`
+}
+
 export function ErrorTableCard({ data }: ErrorTableCardProps) {
   const { filteredBots } = useSelectedErrorContext()
   const [filteredData, setFilteredData] = useState(data)
+  const [sorting, setSorting] = useState<SortingState>(() => {
+    if (typeof window === "undefined") return getSortState("count-desc")
+
+    const stored = localStorage.getItem(ERROR_TABLE_SORT_STORAGE_KEY)
+    if (!stored) return getSortState("count-desc")
+
+    // Validate that the stored value is a valid sort option
+    return sortOptions.some((option) => option.value === stored)
+      ? getSortState(stored)
+      : getSortState("count-desc")
+  })
+
+  // Listen for changes in other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === ERROR_TABLE_SORT_STORAGE_KEY && e.newValue) {
+        // Validate that the new value is a valid sort option
+        if (sortOptions.some((option) => option.value === e.newValue)) {
+          setSorting(getSortState(e.newValue))
+        }
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
 
   useEffect(() => {
     const { errorDistribution } = filterAndGroupErrorBots(filteredBots)
     const errorTableData = getErrorTable(errorDistribution)
     setFilteredData(errorTableData)
   }, [filteredBots])
+
+  // Handle sort changes from the table
+  const handleSortingChange = (
+    updaterOrValue: SortingState | ((old: SortingState) => SortingState)
+  ) => {
+    const newSorting =
+      typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue
+    setSorting(newSorting)
+    const sortOption = getSortOption(newSorting)
+    localStorage.setItem(ERROR_TABLE_SORT_STORAGE_KEY, sortOption)
+  }
 
   return (
     <Card className="dark:bg-baas-black">
@@ -39,18 +91,21 @@ export function ErrorTableCard({ data }: ErrorTableCardProps) {
           Error Details
           <SelectedErrorBadge />
         </CardTitle>
-        <CardDescription>Detailed breakdown of errors across platforms</CardDescription>
+        <CardDescription className="-mt-1.5">
+          Detailed breakdown of errors across platforms
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <DataTable
           columns={errorTableColumns}
           data={filteredData}
-          defaultSort={[{ id: "count", desc: true }]}
+          defaultSort={sorting}
           defaultColumnVisibility={{
             category: false,
             priority: false
           }}
           sortOptions={sortOptions}
+          onSortingChange={handleSortingChange}
         />
       </CardContent>
     </Card>

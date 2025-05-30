@@ -15,7 +15,10 @@ export function SelectedErrorBadge({
   return (
     <Badge
       variant="outline"
-      className={cn("text-xs opacity-0 transition-opacity", botsFilteredByError && "opacity-100")}
+      className={cn(
+        "px-2 py-0.5 text-xs opacity-0 transition-opacity",
+        botsFilteredByError && "opacity-100"
+      )}
     >
       <span className="truncate">{label}</span>
       <Button
