@@ -26,7 +26,7 @@ interface SelectedBotsButtonProps {
 }
 
 export function SelectedBotsButton({ dateRange }: SelectedBotsButtonProps) {
-  const { selectedBots, hoveredBots, generateLogsUrl, clearSelectedBots } = useSelectedBots()
+  const { selectedBots, hoveredBots, openLogs, clearSelectedBots } = useSelectedBots()
   const opacity = useScrollOpacity()
   const [isOpen, setIsOpen] = useState("details")
 
@@ -54,24 +54,20 @@ export function SelectedBotsButton({ dateRange }: SelectedBotsButtonProps) {
         ? {
             label: "View Selected Logs",
             onClick: () =>
-              window.open(
-                generateLogsUrl(
-                  dateRange.startDate,
-                  dateRange.endDate,
-                  selectedBots.map((bot) => bot.uuid)
-                ),
-                "_blank"
+              openLogs(
+                dateRange.startDate,
+                dateRange.endDate,
+                selectedBots.map((bot) => bot.uuid)
               ),
             icon: ExternalLink
           }
         : {
             label: "View All Logs",
-            onClick: () =>
-              window.open(generateLogsUrl(dateRange.startDate, dateRange.endDate), "_blank"),
+            onClick: () => openLogs(dateRange.startDate, dateRange.endDate),
             icon: ExternalLink
           }
     }
-  }, [selectedBots, hoveredBots, dateRange, generateLogsUrl])
+  }, [selectedBots, hoveredBots, dateRange, openLogs])
 
   useEffect(() => {
     if (uiConfig.mode !== "default") {

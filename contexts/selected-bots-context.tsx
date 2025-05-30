@@ -1,14 +1,16 @@
 "use client"
 
 import type { FormattedBotData } from "@/lib/types"
-import { createContext, type ReactNode, useState } from "react"
+import { createContext, type ReactNode, useState, useEffect, useRef } from "react"
+import { createLogsSearchParams, createLogsUrl } from "@/lib/search-params"
+import { setupPostMessageHandler } from "@/lib/post-message"
 
 interface SelectedBotsContextType {
   selectedBots: FormattedBotData[]
   toggleBotSelection: (bot: FormattedBotData, selected?: boolean) => void
   clearSelectedBots: () => void
   isSelected: (botId: string) => boolean
-  generateLogsUrl: (startDate: Date | null, endDate: Date | null, botIds?: string[]) => string
+  openLogs: (startDate: Date | null, endDate: Date | null, botIds?: string[]) => void
   hoveredBots: FormattedBotData[]
   setHoveredBots: (bots: FormattedBotData[]) => void
   selectBotsByCategory: (bots: FormattedBotData[], selected?: boolean) => void
@@ -19,6 +21,15 @@ export const SelectedBotsContext = createContext<SelectedBotsContextType | undef
 export function SelectedBotsProvider({ children }: { children: ReactNode }) {
   const [selectedBots, setSelectedBots] = useState<FormattedBotData[]>([])
   const [hoveredBots, setHoveredBots] = useState<FormattedBotData[]>([])
+  // Clean up message handler on unmount
+  const messageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null)
+  useEffect(() => {
+    return () => {
+      if (messageHandlerRef.current) {
+        window.removeEventListener("message", messageHandlerRef.current)
+      }
+    }
+  }, [])
 
   const toggleBotSelection = (bot: FormattedBotData, selected?: boolean) => {
     const isCurrentlySelected = selectedBots.some((selected) => selected.uuid === bot.uuid)
@@ -69,19 +80,34 @@ export function SelectedBotsProvider({ children }: { children: ReactNode }) {
     return selectedBots.some((bot) => bot.uuid === botId)
   }
 
-  const generateLogsUrl = (startDate: Date | null, endDate: Date | null, botIds?: string[]) => {
-    // Format start and end dates
-    const startDateParam = startDate ? `${startDate.toISOString().split(".")[0]}Z` : ""
-
-    const endDateParam = endDate ? `${endDate.toISOString().split(".")[0]}Z` : ""
-
+  const openLogs = (startDate: Date | null, endDate: Date | null, botIds?: string[]) => {
     // Use provided botIds or take from selectedBots
     const botUuids = botIds || selectedBots.map((bot) => bot.uuid)
 
-    // Return URL with bot UUIDs, if any
-    return botUuids.length > 0
-      ? `https://logs.meetingbaas.com/?startDate=${encodeURIComponent(startDateParam)}&endDate=${encodeURIComponent(endDateParam)}&bot_uuid=${botUuids.join("%2C")}`
-      : `https://logs.meetingbaas.com/?startDate=${encodeURIComponent(startDateParam)}&endDate=${encodeURIComponent(endDateParam)}`
+    // If no bot UUIDs, just open with date params
+    if (botUuids.length === 0) {
+      const searchParams = createLogsSearchParams(startDate, endDate)
+      window.open(createLogsUrl("/", searchParams), "_blank")
+      return
+    }
+
+    // For bot UUIDs, use postMessage approach
+    const windowId = crypto.randomUUID()
+    const searchParams = createLogsSearchParams(startDate, endDate, windowId, true)
+    const newWindow = window.open(createLogsUrl("/", searchParams), "_blank")
+    if (!newWindow) {
+      console.error("Failed to open logs window")
+      return
+    }
+
+    // Set up message handler
+    const handleReady = setupPostMessageHandler({
+      windowId,
+      botUuids
+    })
+
+    // Store the handler in a ref for cleanup
+    messageHandlerRef.current = handleReady
   }
 
   return (
@@ -91,7 +117,7 @@ export function SelectedBotsProvider({ children }: { children: ReactNode }) {
         toggleBotSelection,
         clearSelectedBots,
         isSelected,
-        generateLogsUrl,
+        openLogs,
         hoveredBots,
         setHoveredBots,
         selectBotsByCategory
