@@ -36,6 +36,29 @@ export const getPlatformFromUrl = (url: string): PlatformName => {
   return "unknown"
 }
 
+const platformOrder: Record<PlatformName, number> = {
+  "google meet": 0,
+  teams: 1,
+  zoom: 2,
+  unknown: 3
+}
+
+/**
+ * Filter and group error and warning bots by status value
+ * @param formattedBots - The formatted bots
+ * @returns The error distribution and error bots
+ */
+export const filterAndGroupErrorBots = (
+  formattedBots: FormattedBotData[]
+): { errorDistribution: Dictionary<FormattedBotData[]>; errorBots: FormattedBotData[] } => {
+  // Get bots with errors and warnings
+  const errorBots = formattedBots.filter((bot) => ["error", "warning"].includes(bot.status.type))
+
+  // Group bots by status value
+  const errorDistribution = groupBy(errorBots, "status.value")
+  return { errorDistribution, errorBots }
+}
+
 /**
  * Get the platform distribution of bots
  * @param formattedBots - The formatted bots
@@ -47,15 +70,15 @@ export const getPlatformDistribution = (
   // Group bots by platform
   const distribution = groupBy(formattedBots, "platform")
 
-  const platformDistribution: PlatformDistribution[] = Object.entries(distribution).map(
-    ([key, bots]) => {
+  const platformDistribution: PlatformDistribution[] = Object.entries(distribution)
+    .map(([key, bots]) => {
       const successCount = bots.filter((bot) => bot.status.type.toLowerCase() === "success").length
       const errorCount = bots.filter((bot) => bot.status.type.toLowerCase() === "error").length
       const warningCount = bots.filter((bot) => bot.status.type.toLowerCase() === "warning").length
-      const otherCount = bots.length - successCount - errorCount - warningCount
+      const pendingCount = bots.filter((bot) => bot.status.type.toLowerCase() === "pending").length
 
       return {
-        platform: key,
+        platform: key as PlatformName,
         count: bots.length,
         percentage: (bots.length / formattedBots.length) * 100,
         statusDistribution: {
@@ -71,16 +94,20 @@ export const getPlatformDistribution = (
             count: warningCount,
             percentage: (warningCount / bots.length) * 100
           },
-          other: {
-            count: otherCount,
-            percentage: (otherCount / bots.length) * 100
+          pending: {
+            count: pendingCount,
+            percentage: (pendingCount / bots.length) * 100
           }
         }
       }
-    }
-  )
+    })
+    .sort((a, b) => a.platform.localeCompare(b.platform))
 
-  return platformDistribution
+  return platformDistribution.sort((a, b) => {
+    const orderA = platformOrder[a.platform] ?? 999
+    const orderB = platformOrder[b.platform] ?? 999
+    return orderA - orderB
+  })
 }
 
 /**

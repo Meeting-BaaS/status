@@ -11,9 +11,9 @@ import {
   getDurationTimelineData,
   getPlatformDurationData,
   getDurationDistributionData,
-  getIssueReportData
+  getIssueReportData,
+  filterAndGroupErrorBots
 } from "@/lib/format-bot-stats"
-import { groupBy } from "lodash-es"
 import { calculateAverageDuration } from "@/lib/utils"
 
 interface UseBotStatsParams {
@@ -62,13 +62,7 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         ...bot,
         platform: getPlatformFromUrl(bot.meeting_url)
       }))
-      // Get bots with errors and warnings
-      const errorBots = formattedBots.filter((bot) =>
-        ["error", "warning"].includes(bot.status.type)
-      )
-
-      // Group bots by status value
-      const errorDistribution = groupBy(errorBots, "status.value")
+      const { errorDistribution, errorBots } = filterAndGroupErrorBots(formattedBots)
 
       // Bot distribution by platform
       const platformDistribution = getPlatformDistribution(formattedBots)

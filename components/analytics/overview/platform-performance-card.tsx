@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber, platformColors } from "@/lib/utils"
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
 import {
   Cell,
   Pie,
@@ -13,19 +13,13 @@ import {
   type TooltipProps as RechartsTooltipProps
 } from "recharts"
 import { AnimatedNumber } from "@/components/ui/animated-number"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
+import type { PlatformDistribution } from "@/lib/types"
+import { getPlatformDistribution } from "@/lib/format-bot-stats"
+import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 
 interface PlatformPerformanceCardProps {
-  platformDistribution: Array<{
-    platform: string
-    count: number
-    percentage: number
-    statusDistribution: {
-      success: { count: number; percentage: number }
-      error: { count: number; percentage: number }
-      warning: { count: number; percentage: number }
-      other: { count: number; percentage: number }
-    }
-  }>
+  platformDistribution: PlatformDistribution[]
 }
 
 const otherStatus = "var(--other-status)"
@@ -77,8 +71,16 @@ function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>)
 }
 
 export function PlatformPerformanceCard({ platformDistribution }: PlatformPerformanceCardProps) {
+  const { filteredBots } = useSelectedErrorContext()
+  const [filteredDistribution, setFilteredDistribution] = useState(platformDistribution)
+
+  useEffect(() => {
+    const filteredData = getPlatformDistribution(filteredBots)
+    setFilteredDistribution(filteredData)
+  }, [filteredBots])
+
   const chartData = useMemo(() => {
-    const data = platformDistribution.map((item) => ({
+    const data = filteredDistribution.map((item) => ({
       platform: item.platform,
       data: [
         {
@@ -92,18 +94,18 @@ export function PlatformPerformanceCard({ platformDistribution }: PlatformPerfor
           value:
             item.statusDistribution.error.count +
             item.statusDistribution.warning.count +
-            item.statusDistribution.other.count,
+            item.statusDistribution.pending.count,
           platform: item.platform,
           statusDistribution: item.statusDistribution
         }
       ]
     }))
     return data
-  }, [platformDistribution])
+  }, [filteredDistribution])
 
   // Create chart configuration
   const chartConfig = useMemo(() => {
-    return platformDistribution.reduce(
+    return filteredDistribution.reduce(
       (acc, item) => {
         acc[item.platform] = {
           label: item.platform,
@@ -115,12 +117,15 @@ export function PlatformPerformanceCard({ platformDistribution }: PlatformPerfor
       },
       {} as Record<string, { label: string; color: string }>
     )
-  }, [platformDistribution])
+  }, [filteredDistribution])
 
   return (
     <Card className="w-full md:w-1/2 dark:bg-baas-black">
       <CardHeader>
-        <CardTitle>Bot Performance</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Bot Performance
+          <SelectedErrorBadge />
+        </CardTitle>
         <CardDescription>Success rate across platforms</CardDescription>
       </CardHeader>
       <CardContent>

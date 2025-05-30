@@ -19,9 +19,11 @@ import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { AnimatedNumber } from "@/components/ui/animated-number"
+import type { ErrorDistribution } from "@/lib/types"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 
 interface ErrorDistributionCardProps {
-  errorDistributionData: Array<{ name: string; value: number; percentage: number }>
+  errorDistributionData: ErrorDistribution[]
   totalErrors: number
 }
 
@@ -52,37 +54,22 @@ export function ErrorDistributionCard({
   errorDistributionData,
   totalErrors
 }: ErrorDistributionCardProps) {
-  // Initialize with all error types selected
-  const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(() =>
-    errorDistributionData.map((item) => item.name)
-  )
+  const { selectedErrorValues, addErrorValue, removeErrorValue, selectAll, selectNone } =
+    useSelectedErrorContext()
   const [filteredData, setFilteredData] = useState(errorDistributionData)
   const [filteredTotal, setFilteredTotal] = useState(totalErrors)
 
   // Update filtered data when selection changes or new data arrives
   useEffect(() => {
-    // Get all available error types from the new data
-    const availableErrorTypes = errorDistributionData.map((item) => item.name)
-
-    // Filter out any selected values that no longer exist in the new data
-    const validSelectedValues = selectedErrorValues.filter((value) =>
-      availableErrorTypes.includes(value)
-    )
-
-    // Update selectedErrorValues to remove any values that no longer exist
-    if (validSelectedValues.length !== selectedErrorValues.length) {
-      setSelectedErrorValues(validSelectedValues)
-    }
-
     // If we have no valid selections, show no data
-    if (validSelectedValues.length === 0) {
+    if (selectedErrorValues.length === 0) {
       setFilteredData([])
       setFilteredTotal(0)
       return
     }
 
     // Filter the data based on valid selections
-    const filtered = errorDistributionData.filter((item) => validSelectedValues.includes(item.name))
+    const filtered = errorDistributionData.filter((item) => selectedErrorValues.includes(item.name))
     setFilteredData(filtered)
     setFilteredTotal(filtered.reduce((sum, item) => sum + item.value, 0))
   }, [errorDistributionData, selectedErrorValues])
@@ -110,20 +97,20 @@ export function ErrorDistributionCard({
 
   // Handle legend click
   const handleLegendClick = (errorValue: string) => {
-    const newSelection = selectedErrorValues.includes(errorValue)
-      ? selectedErrorValues.filter((v) => v !== errorValue)
-      : [...selectedErrorValues, errorValue]
-
-    setSelectedErrorValues(newSelection)
+    if (selectedErrorValues.includes(errorValue)) {
+      removeErrorValue(errorValue)
+    } else {
+      addErrorValue(errorValue)
+    }
   }
 
   // Handle select all/none
   const handleSelectAll = () => {
-    setSelectedErrorValues(errorDistributionData.map((item) => item.name))
+    selectAll(errorDistributionData.map((item) => item.name))
   }
 
   const handleSelectNone = () => {
-    setSelectedErrorValues([])
+    selectNone()
   }
 
   // Sort error types alphabetically

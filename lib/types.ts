@@ -99,14 +99,14 @@ export type FilterState = {
 }
 
 export type PlatformDistribution = {
-  platform: string
+  platform: PlatformName
   count: number
   percentage: number
   statusDistribution: {
     success: { count: number; percentage: number }
     error: { count: number; percentage: number }
     warning: { count: number; percentage: number }
-    other: { count: number; percentage: number }
+    pending: { count: number; percentage: number }
   }
 }
 

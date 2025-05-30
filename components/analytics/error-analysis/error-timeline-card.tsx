@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber } from "@/lib/utils"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Line,
   LineChart,
@@ -19,6 +19,9 @@ import { scaleOrdinal } from "d3-scale"
 import { schemeTableau10 } from "d3-scale-chromatic"
 import dayjs from "dayjs"
 import type { TimelineEntry } from "@/lib/types"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
+import { getTimelineData } from "@/lib/format-bot-stats"
+import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 
 interface ErrorTimelineCardProps {
   timelineData: TimelineEntry[]
@@ -65,16 +68,24 @@ function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
 }
 
 export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
+  const { filteredBots } = useSelectedErrorContext()
+  const [filteredData, setFilteredData] = useState(timelineData)
+
+  useEffect(() => {
+    const filteredData = getTimelineData(filteredBots)
+    setFilteredData(filteredData)
+  }, [filteredBots])
+
   // Get all unique priorities from the timeline data
   const priorities = useMemo(() => {
     const uniquePriorities = new Set<string>()
-    for (const day of timelineData) {
+    for (const day of filteredData) {
       for (const { priority } of day.priorities) {
         uniquePriorities.add(priority)
       }
     }
     return Array.from(uniquePriorities)
-  }, [timelineData])
+  }, [filteredData])
 
   // Create a color scale for priorities
   const colorScale = useMemo(() => {
@@ -97,7 +108,7 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
 
   // Transform data for the chart
   const chartData = useMemo(() => {
-    return timelineData.map((day) => {
+    return filteredData.map((day) => {
       const transformedDay: Record<string, number | string> = {
         date: day.date,
         total: day.total
@@ -110,12 +121,15 @@ export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
 
       return transformedDay
     })
-  }, [timelineData])
+  }, [filteredData])
 
   return (
     <Card className="dark:bg-baas-black">
       <CardHeader>
-        <CardTitle>Error Timeline</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Error Timeline
+          <SelectedErrorBadge />
+        </CardTitle>
         <CardDescription>Error trends by priority over time</CardDescription>
       </CardHeader>
       <CardContent>

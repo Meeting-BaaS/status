@@ -32,14 +32,15 @@ const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"
   loading: Loading
 })
 import { cn } from "@/lib/utils"
+import { SelectedErrorProvider } from "@/contexts/selected-error-context"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
 
 const tabs = [
   { id: "overview", label: "Overview" },
+  { id: "issue-reports", label: "Issue Reports" },
   { id: "error-analysis", label: "Error Analysis" },
-  { id: "duration", label: "Duration" },
-  { id: "issue-reports", label: "Issue Reports" }
+  { id: "duration", label: "Duration" }
 ]
 
 export function Analytics() {
@@ -129,9 +130,7 @@ export function Analytics() {
     <div className="relative">
       {/* Loading state - only show full screen loader on initial load */}
       {isLoading && !data ? (
-        <div className="flex h-96 items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
+        <Loading />
       ) : isError ? (
         <div className="flex h-96 items-center justify-center text-destructive">
           Error: {error instanceof Error ? error.message : genericError}
@@ -141,7 +140,7 @@ export function Analytics() {
           <div>
             <h1 className="font-bold text-3xl">Meeting Bot Analytics</h1>
             <p className="text-muted-foreground">
-              Monitor your meeting bot performance and statistics - Change this description
+              Monitor your meeting bot performance across all platforms
             </p>
           </div>
           <Filters
@@ -169,7 +168,12 @@ export function Analytics() {
                 containerClassName="mb-4"
               />
               <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
-                {renderTabContent}
+                <SelectedErrorProvider
+                  initialErrorDistribution={data.errorDistributionData}
+                  allBots={data.allBots}
+                >
+                  {renderTabContent}
+                </SelectedErrorProvider>
               </div>
             </>
           )}
