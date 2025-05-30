@@ -62,7 +62,11 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   useEffect(() => {
     if (session?.user?.email && !limitOptions.some((option) => option.value === value)) {
       onChange(baseLimitOptions[0].value)
-      localStorage.setItem(LIMIT_STORAGE_KEY, baseLimitOptions[0].value.toString())
+      try {
+        localStorage.setItem(LIMIT_STORAGE_KEY, baseLimitOptions[0].value.toString())
+      } catch (error) {
+        console.warn("Failed to reset limit in localStorage:", error)
+      }
     }
   }, [session?.user?.email, limitOptions, value, onChange])
 

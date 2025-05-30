@@ -70,15 +70,18 @@ export const formatPlanType = (planType: SubscriptionPlanType): string => {
   return `Current plan: ${formattedPlanType}`
 }
 
+const TOKEN_CRITICAL_THRESHOLD = 5
+const TOKEN_WARNING_THRESHOLD = 8
+
 export const getProgressBarColors = (availableTokens: number) => {
-  if (availableTokens < 5) {
+  if (availableTokens < TOKEN_CRITICAL_THRESHOLD) {
     return {
       main: "bg-destructive",
       bg: "bg-destructive/10",
       text: "text-destructive"
     }
   }
-  if (availableTokens < 8) {
+  if (availableTokens < TOKEN_WARNING_THRESHOLD) {
     return {
       main: "bg-amber-500 dark:bg-baas-warning-500",
       bg: "bg-amber-500/10 dark:bg-baas-warning-500/10",

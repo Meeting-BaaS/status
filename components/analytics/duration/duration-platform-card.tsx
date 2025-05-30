@@ -50,7 +50,7 @@ export function DurationPlatformCard({ platformDurationData }: DurationPlatformC
       0
     )
     const totalBots = platformDurationData.reduce((sum, item) => sum + item.count, 0)
-    return totalDuration / totalBots
+    return totalBots > 0 ? totalDuration / totalBots : 0
   }, [platformDurationData])
 
   // Chart configuration
