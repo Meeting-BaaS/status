@@ -36,24 +36,34 @@ interface AdditionalFiltersProps {
   setFilters: (filters: FilterState) => void
 }
 
+const defaultAccordionValue = ["platformFilters", "statusFilters", "userReportedErrorStatusFilters"]
+
 export function AdditionalFilters({ filters, setFilters }: AdditionalFiltersProps) {
   const [open, setOpen] = useState(false)
   const [accordionValue, setAccordionValue] = useState<string[]>(() => {
     // Initialize from localStorage if available
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(ACCORDION_STORAGE_KEY)
-      return stored
-        ? JSON.parse(stored)
-        : ["platformFilters", "statusFilters", "userReportedErrorStatusFilters"]
+      try {
+        return stored ? JSON.parse(stored) : defaultAccordionValue
+      } catch (error) {
+        console.warn("Invalid JSON in localStorage for accordion state", error)
+        return defaultAccordionValue
+      }
     }
-    return ["platformFilters", "statusFilters", "userReportedErrorStatusFilters"]
+    return defaultAccordionValue
   })
 
   // Listen for changes in other tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === ACCORDION_STORAGE_KEY && e.newValue) {
-        setAccordionValue(JSON.parse(e.newValue))
+        try {
+          setAccordionValue(JSON.parse(e.newValue))
+        } catch (error) {
+          console.warn("Invalid JSON in localStorage for accordion state", error)
+          // Ignore invalid JSON and keep current state
+        }
       }
     }
 

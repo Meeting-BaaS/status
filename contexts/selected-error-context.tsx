@@ -2,7 +2,6 @@
 
 import { createContext, useState, useEffect, type ReactNode, useCallback, useMemo } from "react"
 import type { ErrorDistribution, FormattedBotData } from "@/lib/types"
-import { isEqual } from "lodash-es"
 
 export const SELECTED_ERROR_STORAGE_KEY = "analytics-selected-errors"
 
@@ -159,7 +158,9 @@ export function SelectedErrorProvider({
   }
 
   const botsFilteredByError = useMemo(
-    () => !isEqual(selectedErrorValues.sort(), allErrorValues.sort()),
+    () =>
+      selectedErrorValues.length !== allErrorValues.length ||
+      !selectedErrorValues.every((value) => allErrorValues.includes(value)),
     [selectedErrorValues, allErrorValues]
   )
 

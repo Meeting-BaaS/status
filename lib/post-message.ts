@@ -10,7 +10,8 @@ export function setupPostMessageHandler({ windowId, botUuids, onComplete }: Post
   const handleReady = (event: MessageEvent) => {
     if (event.origin !== LOGS_URL) return
     if (event.data?.type === "ready" && event.data?.windowId === windowId) {
-      event.source?.postMessage(
+      if (!event.source) return
+      ;(event.source as Window)?.postMessage(
         { type: "setBotUuids", uuids: botUuids, windowId },
         { targetOrigin: LOGS_URL }
       )

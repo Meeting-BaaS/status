@@ -1,5 +1,6 @@
 import type { ConsumptionChartData, DailyTokenConsumption } from "@/lib/types"
 import dayjs from "dayjs"
+import { secondsToHours } from "./utils"
 
 /**
  * Calculate the total number of recording tokens consumed
@@ -90,13 +91,10 @@ export function getChartData(
       streaming:
         consumption_by_service.streaming_input_tokens +
         consumption_by_service.streaming_output_tokens,
-      duration: Math.round((consumption_by_service.duration / 3600) * 100) / 100, // Convert to hours with 2 decimals
-      transcription_hour:
-        Math.round((consumption_by_service.transcription_hour / 3600) * 100) / 100,
-      streaming_input_hour:
-        Math.round((consumption_by_service.streaming_input_hour / 3600) * 100) / 100,
-      streaming_output_hour:
-        Math.round((consumption_by_service.streaming_output_hour / 3600) * 100) / 100
+      duration: secondsToHours(consumption_by_service.duration),
+      transcription_hour: secondsToHours(consumption_by_service.transcription_hour),
+      streaming_input_hour: secondsToHours(consumption_by_service.streaming_input_hour),
+      streaming_output_hour: secondsToHours(consumption_by_service.streaming_output_hour)
     }
   })
 }

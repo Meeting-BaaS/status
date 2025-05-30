@@ -28,19 +28,28 @@ import { cn } from "@/lib/utils"
 import { SortDropdown } from "@/components/ui/sort-dropdown"
 import { useSelectedBots } from "@/hooks/use-selected-bots"
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  defaultSort?: SortingState
-  defaultColumnVisibility?: VisibilityState
-  sortOptions?: { label: string; value: string }[]
-  onSortingChange?: OnChangeFn<SortingState>
+interface DataTableSelectionProps {
+  enableRowSelection?: boolean
+  enableMultiRowSelection?: boolean
+}
+
+interface DataTableEventProps<TData> {
   onRowHover?: (row: Row<TData>) => void
   onRowLeave?: () => void
   onRowClick?: (row: Row<TData>) => void
-  enableRowSelection?: boolean
-  enableMultiRowSelection?: boolean
   enableRowHover?: boolean
+}
+
+interface DataTableSortingProps {
+  defaultSort?: SortingState
+  sortOptions?: { label: string; value: string }[]
+  onSortingChange?: OnChangeFn<SortingState>
+}
+
+interface DataTableProps<TData, TValue> extends DataTableSelectionProps, DataTableEventProps<TData>, DataTableSortingProps {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+  defaultColumnVisibility?: VisibilityState
 }
 
 export function DataTable<TData, TValue>({
@@ -92,7 +101,7 @@ export function DataTable<TData, TValue>({
     if (selectedBots.length === 0) {
       table.resetRowSelection()
     }
-  }, [selectedBots])
+  }, [selectedBots, table])
 
   const handleRowClick = (row: Row<TData>) => {
     if (enableRowSelection) {

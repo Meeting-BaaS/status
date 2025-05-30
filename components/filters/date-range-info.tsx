@@ -18,12 +18,12 @@ export function DateRangeInfo({
   isRefetching
 }: DateRangeInfoProps) {
   if (isRefetching) {
-    return <Skeleton className="h-4 w-96" />
+    return <Skeleton className="h-5 w-full max-w-96" />
   }
   return (
     <div className="text-muted-foreground text-sm">
-      Results from {limit} bots between {dayjs(lastBotDate).utc().format("D MMM YYYY")} to{" "}
-      {dayjs(firstBotDate).utc().format("D MMM YYYY")}
+      Results from {limit} bots between {dayjs(lastBotDate).utc().local().format("D MMM YYYY")} to{" "}
+      {dayjs(firstBotDate).utc().local().format("D MMM YYYY")}
     </div>
   )
 }

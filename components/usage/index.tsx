@@ -37,7 +37,7 @@ export default function Usage({ paymentStatus }: { paymentStatus?: string }) {
     endDate: dateRange?.endDate ?? null
   })
 
-  // Update URL when date range, filters, or bot UUIDs change
+  // Update URL when date range changes
   useEffect(() => {
     const newParams = updateDateRangeSearchParams(searchParams, dateRange)
     if (newParams.toString() !== searchParams.toString()) {

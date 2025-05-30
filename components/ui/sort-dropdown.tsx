@@ -16,33 +16,45 @@ interface SortDropdownProps {
 }
 
 export function SortDropdown({ sortOptions, sorting, onSortingChange }: SortDropdownProps) {
+  const handleValueChange = (value: string) => {
+    const [id, direction] = value.split("-")
+    if (id && (direction === "asc" || direction === "desc")) {
+      onSortingChange([{ id, desc: direction === "desc" }])
+    }
+  }
   return (
     <div className="md:-mt-16 -mt-4 mb-4 flex items-center justify-end md:mb-8">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="md:ml-auto">
-            Default Sort <ChevronDown />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuRadioGroup
-            value={
-              sorting[0]?.id
-                ? `${sorting[0].id}-${sorting[0].desc ? "desc" : "asc"}`
-                : undefined
-            }
-            onValueChange={(value) => {
-              onSortingChange([{ id: value.split("-")[0], desc: value.endsWith("-desc") }])
-            }}
-          >
-            {sortOptions.map((option) => (
-              <DropdownMenuRadioItem key={option.value} value={option.value}>
-                {option.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div>
+        <span className="mr-2 text-muted-foreground text-sm">Sort by:</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="md:ml-auto">
+              {sorting.length > 0 && sorting[0]?.id
+                ? sortOptions.find(
+                    (opt) => opt.value === `${sorting[0].id}-${sorting[0].desc ? "desc" : "asc"}`
+                  )?.label || "Default Sort"
+                : "Default Sort"}
+              <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup
+              value={
+                sorting.length > 0 && sorting[0]?.id
+                  ? `${sorting[0].id}-${sorting[0].desc ? "desc" : "asc"}`
+                  : undefined
+              }
+              onValueChange={handleValueChange}
+            >
+              {sortOptions.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   )
-} 
+}

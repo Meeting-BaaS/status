@@ -21,19 +21,25 @@ export const MainTabs = ({
   tabs,
   disabled,
   layoutId = "tabs-underline",
-  containerClassName,
+  containerClassName
 }: MainTabsProps) => {
   return (
     <>
       {/* For smaller devices, tabs are rendered in a column */}
-      <div className={cn("border-l border-border flex sm:hidden flex-col items-start text-sm", containerClassName)}>
+      <div
+        className={cn(
+          "flex flex-col items-start border-border border-l text-sm sm:hidden",
+          containerClassName
+        )}
+      >
         {tabs.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             className={cn(
-              "py-3 px-4 focus:outline-none relative transition-colors",
+              "relative px-4 py-3 transition-colors focus:outline-none",
               currentTab === tab.id
-                ? "text-primary font-semibold disabled:text-muted-foreground/40 disabled:font-normal"
+                ? "font-semibold text-primary disabled:font-normal disabled:text-muted-foreground/40"
                 : "text-muted-foreground hover:text-foreground disabled:text-muted-foreground/40"
             )}
             onClick={() => setCurrentTab(tab.id)}
@@ -44,14 +50,14 @@ export const MainTabs = ({
               <motion.div
                 layoutId={`${layoutId}-mobile`}
                 className={cn(
-                  "absolute top-0 left-0 w-1 h-full rounded-r-md",
+                  "absolute top-0 left-0 h-full w-1 rounded-r-md",
                   disabled ? "bg-muted-foreground/40" : "bg-primary"
                 )}
                 transition={{
                   type: "spring",
                   stiffness: 200,
                   damping: 30,
-                  duration: 0.3,
+                  duration: 0.3
                 }}
               />
             )}
@@ -59,14 +65,15 @@ export const MainTabs = ({
         ))}
       </div>
       {/* For larger devices, tabs are rendered in a row */}
-      <div className={cn("border-b border-border hidden sm:flex text-sm", containerClassName)}>
+      <div className={cn("hidden border-border border-b text-sm sm:flex", containerClassName)}>
         {tabs.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             className={cn(
-              "py-3 px-5 focus:outline-none relative transition-colors group",
+              "group relative px-5 py-3 transition-colors after:absolute after:right-0 after:bottom-0 after:left-0 after:h-0.5 after:bg-transparent after:transition-colors hover:after:bg-muted-foreground focus:outline-none",
               currentTab === tab.id
-                ? "text-primary font-semibold disabled:text-muted-foreground/40 disabled:font-normal"
+                ? "font-semibold text-primary disabled:font-normal disabled:text-muted-foreground/40"
                 : "text-muted-foreground hover:text-foreground disabled:text-muted-foreground/40"
             )}
             onClick={() => setCurrentTab(tab.id)}
@@ -77,20 +84,20 @@ export const MainTabs = ({
               <motion.div
                 layoutId={layoutId}
                 className={cn(
-                  "absolute bottom-0 left-0 right-0 h-0.5 rounded-t-md",
+                  "absolute right-0 bottom-0 left-0 h-0.5 rounded-t-md",
                   disabled ? "bg-muted-foreground/40" : "bg-primary"
                 )}
                 transition={{
                   type: "spring",
                   stiffness: 200,
                   damping: 30,
-                  duration: 0.3,
+                  duration: 0.3
                 }}
               />
-            ) : <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-transparent transition-colors group-hover:bg-muted-foreground" />}
+            ) : null}
           </button>
         ))}
       </div>
     </>
   )
-} 
+}

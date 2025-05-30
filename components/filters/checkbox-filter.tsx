@@ -37,7 +37,7 @@ export function CheckboxFilter({
               id={`${label}-${option.label}`}
               name={`${label}-${option.label}`}
               checked={selectedValues.includes(option.value)}
-              onCheckedChange={(checked) => handleOptionChange(option, checked as boolean)}
+              onCheckedChange={(checked) => handleOptionChange(option, checked === true)}
             />
             <Label htmlFor={`${label}-${option.label}`} className="font-medium text-sm">
               {option.label}

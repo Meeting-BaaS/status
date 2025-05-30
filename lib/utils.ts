@@ -54,6 +54,13 @@ export const formatDuration = (value: number) => {
   return `${formatNumber(minutes)}m`
 }
 
+/**
+ * Converts seconds to hours
+ */
+export function secondsToHours(seconds: number): number {
+  return Math.round((seconds / 3600) * 100) / 100
+}
+
 export const formatPlanType = (planType: SubscriptionPlanType): string => {
   const formattedPlanType = planType
     .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")

@@ -12,14 +12,12 @@ export function AnimatedNumber({ value }: { value: number }) {
     }, [value])
   
     return (
-    <AnimatePresence>
       <div className="flex">
         {formattedValue.split("").map((char, index) => (
           <motion.span
             key={`${char}-${index}`}
             initial={{ opacity: 0, y: isIncreasing ? 10 : -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: isIncreasing ? -10 : 10 }}
             transition={{
               duration: 0.15,
               delay: index * 0.1,
@@ -31,7 +29,6 @@ export function AnimatedNumber({ value }: { value: number }) {
           </motion.span>
         ))}
       </div>
-    </AnimatePresence>
     )
   }
   

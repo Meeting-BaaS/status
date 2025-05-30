@@ -40,8 +40,8 @@ function TokenUsageTooltip(props: RechartsTooltipProps<number, string>) {
   if (!active || !payload?.length || !label) return null
 
   const total = payload.reduce((sum, item) => {
-    const value = Number(item.value)
-    return sum + (Number.isNaN(value) ? 0 : value)
+    const value = Number(item.value) || 0
+    return sum + value
   }, 0)
 
   return (

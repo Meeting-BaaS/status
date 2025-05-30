@@ -8,9 +8,5 @@ interface ErrorAnalysisProps {
 }
 
 export default function ErrorAnalysis({ timelineData }: ErrorAnalysisProps) {
-  return (
-    <>
-      <ErrorTimelineCard timelineData={timelineData} />
-    </>
-  )
+  return <ErrorTimelineCard timelineData={timelineData} />
 }

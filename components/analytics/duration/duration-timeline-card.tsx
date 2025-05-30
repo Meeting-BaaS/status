@@ -41,7 +41,7 @@ function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
             />
             <span className="capitalize">{entry.name}</span>
             <span className="ml-auto font-medium">
-              {entry.name === "Average Duration" || entry.name === "Total Duration"
+              {entry.dataKey === "averageDuration"
                 ? formatDuration(entry.value as number)
                 : formatNumber(entry.value as number)}
             </span>

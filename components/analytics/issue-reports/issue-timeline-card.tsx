@@ -51,16 +51,19 @@ export function IssueTimelineCard({ timelineData, statusColors }: IssueTimelineC
 
     if (!active || !payload?.length) return null
 
+    const firstPayload = payload[0]
+    if (!firstPayload?.payload?.date) return null
+
     return (
       <div className="z-50 rounded-lg border bg-background p-2 shadow-sm">
         <p className="mb-2 font-medium text-sm">
-          {dayjs(payload[0].payload.date).format("D MMM YYYY")}
+          {dayjs(firstPayload.payload.date).format("D MMM YYYY")}
         </p>
         <div className="space-y-1">
           {payload.map((entry) => (
             <div key={entry.name} className="flex items-center gap-2 text-xs">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="capitalize">{entry.name?.replace("_", " ") || "Unknown"}</span>
+              <span className="capitalize">{entry.name?.replace(/_/g, " ") || "Unknown"}</span>
               <span className="ml-auto font-medium">{formatNumber(entry.value as number)}</span>
             </div>
           ))}
@@ -98,7 +101,7 @@ export function IssueTimelineCard({ timelineData, statusColors }: IssueTimelineC
                   wrapperStyle={{ outline: "none", zIndex: 10 }}
                 />
                 <Legend
-                  formatter={(value) => value.replace("_", " ")}
+                  formatter={(value) => value.replace(/_/g, " ")}
                   wrapperStyle={{ fontSize: "0.75rem", textTransform: "capitalize" }}
                 />
                 <Line

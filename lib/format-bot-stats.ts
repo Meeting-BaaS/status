@@ -70,8 +70,8 @@ export const getPlatformDistribution = (
   // Group bots by platform
   const distribution = groupBy(formattedBots, "platform")
 
-  const platformDistribution: PlatformDistribution[] = Object.entries(distribution)
-    .map(([key, bots]) => {
+  const platformDistribution: PlatformDistribution[] = Object.entries(distribution).map(
+    ([key, bots]) => {
       const successCount = bots.filter((bot) => bot.status.type.toLowerCase() === "success").length
       const errorCount = bots.filter((bot) => bot.status.type.toLowerCase() === "error").length
       const warningCount = bots.filter((bot) => bot.status.type.toLowerCase() === "warning").length
@@ -100,8 +100,8 @@ export const getPlatformDistribution = (
           }
         }
       }
-    })
-    .sort((a, b) => a.platform.localeCompare(b.platform))
+    }
+  )
 
   return platformDistribution.sort((a, b) => {
     const orderA = platformOrder[a.platform] ?? 999

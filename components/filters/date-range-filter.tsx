@@ -34,7 +34,7 @@ export function DateRangeFilter({ value, onChange, hideToggle = false }: DateRan
         readOnly
         {...(hideToggle && { toggleClassName: "hidden" })}
         inputName="date-range-picker"
-        inputClassName="relative border border-input text-foreground h-9 rounded-md py2.5 pl-3 pr-8 w-full text-base shadow-xs transition-[color,box-shadow] outline-none cursor-pointer md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] dark:bg-input/30 placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground"
+        inputClassName="relative border border-input text-foreground h-9 rounded-md py-2.5 pl-3 pr-8 w-full text-base shadow-xs transition-[color,box-shadow] outline-none cursor-pointer md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] dark:bg-input/30 placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground"
       />
       {hideToggle && (
         <CalendarIcon className="-translate-y-1/2 -z-10 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />

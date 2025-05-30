@@ -41,7 +41,7 @@ export const errorTableColumns: ColumnDef<ErrorTableEntry>[] = [
     sortingFn: (rowA, rowB) => {
       const priorityA = (rowA.original.priority || "medium") as Priority
       const priorityB = (rowB.original.priority || "medium") as Priority
-      return priorityOrder[priorityB] - priorityOrder[priorityA]
+      return priorityOrder[priorityA] - priorityOrder[priorityB]
     }
   },
   {

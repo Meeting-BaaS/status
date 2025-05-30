@@ -89,17 +89,16 @@ export function PlatformDistributionCard({
     )
   }, [platformDistribution])
 
-  const CustomLabel = (props: LabelProps) =>
-    useMemo(() => {
-      const { x, y, value } = props
-      if (typeof x !== "number" || typeof y !== "number" || typeof value !== "string") return null
+  const CustomLabel = (props: LabelProps) => {
+    const { x, y, value } = props
+    if (typeof x !== "number" || typeof y !== "number" || typeof value !== "string") return null
 
-      return (
-        <text x={x} y={y + 25} className="fill-foreground text-sm capitalize">
-          {value}
-        </text>
-      )
-    }, [props])
+    return (
+      <text x={x} y={y + 25} className="fill-foreground text-sm capitalize">
+        {value}
+      </text>
+    )
+  }
 
   return (
     <Card className="w-full md:w-1/2 dark:bg-baas-black">

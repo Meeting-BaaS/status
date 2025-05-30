@@ -108,7 +108,7 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         dateRange: firstBotDate && lastBotDate ? { firstBotDate, lastBotDate } : null
       }
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 15, // 15 minutes for analytics data
     refetchOnMount: true,
     placeholderData: (previousData) => previousData
   })

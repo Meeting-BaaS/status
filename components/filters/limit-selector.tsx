@@ -85,7 +85,11 @@ export function LimitSelector({ value, onChange }: LimitSelectorProps) {
   const handleLimitChange = (newValue: string) => {
     const limit = Number(newValue)
     // Update local storage
-    localStorage.setItem(LIMIT_STORAGE_KEY, limit.toString())
+    try {
+      localStorage.setItem(LIMIT_STORAGE_KEY, limit.toString())
+    } catch (error) {
+      console.warn("Failed to save limit to localStorage:", error)
+    }
     // Update component state
     onChange(limit)
   }

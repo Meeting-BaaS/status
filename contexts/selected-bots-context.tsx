@@ -4,6 +4,7 @@ import type { FormattedBotData } from "@/lib/types"
 import { createContext, type ReactNode, useState, useEffect, useRef } from "react"
 import { createLogsSearchParams, createLogsUrl } from "@/lib/search-params"
 import { setupPostMessageHandler } from "@/lib/post-message"
+import { v4 as uuidv4 } from "uuid"
 
 interface SelectedBotsContextType {
   selectedBots: FormattedBotData[]
@@ -21,15 +22,6 @@ export const SelectedBotsContext = createContext<SelectedBotsContextType | undef
 export function SelectedBotsProvider({ children }: { children: ReactNode }) {
   const [selectedBots, setSelectedBots] = useState<FormattedBotData[]>([])
   const [hoveredBots, setHoveredBots] = useState<FormattedBotData[]>([])
-  // Clean up message handler on unmount
-  const messageHandlerRef = useRef<((event: MessageEvent) => void) | null>(null)
-  useEffect(() => {
-    return () => {
-      if (messageHandlerRef.current) {
-        window.removeEventListener("message", messageHandlerRef.current)
-      }
-    }
-  }, [])
 
   const toggleBotSelection = (bot: FormattedBotData, selected?: boolean) => {
     const isCurrentlySelected = selectedBots.some((selected) => selected.uuid === bot.uuid)
@@ -48,26 +40,24 @@ export function SelectedBotsProvider({ children }: { children: ReactNode }) {
   const selectBotsByCategory = (bots: FormattedBotData[], selected?: boolean) => {
     if (bots.length === 0) return
 
+    const selectedUuids = new Set(selectedBots.map((bot) => bot.uuid))
+    const botUuids = new Set(bots.map((bot) => bot.uuid))
+
     // Check if all bots in this category are already selected
-    const allAlreadySelected = bots.every((bot) =>
-      selectedBots.some((selected) => selected.uuid === bot.uuid)
-    )
+    const allAlreadySelected = bots.every((bot) => selectedUuids.has(bot.uuid))
 
     // If selected state is provided, use that, otherwise toggle based on current state
     const shouldSelect = selected !== undefined ? selected : !allAlreadySelected
 
     if (shouldSelect) {
       // Add all bots that aren't already selected
-      const botsToAdd = bots.filter(
-        (bot) => !selectedBots.some((selected) => selected.uuid === bot.uuid)
-      )
+      const botsToAdd = bots.filter((bot) => !selectedUuids.has(bot.uuid))
 
       if (botsToAdd.length > 0) {
         setSelectedBots([...selectedBots, ...botsToAdd])
       }
     } else {
       // Remove all bots in this category
-      const botUuids = new Set(bots.map((bot) => bot.uuid))
       setSelectedBots(selectedBots.filter((bot) => !botUuids.has(bot.uuid)))
     }
   }
@@ -92,7 +82,7 @@ export function SelectedBotsProvider({ children }: { children: ReactNode }) {
     }
 
     // For bot UUIDs, use postMessage approach
-    const windowId = crypto.randomUUID()
+    const windowId = crypto.randomUUID?.() ?? uuidv4()
     const searchParams = createLogsSearchParams(startDate, endDate, windowId, true)
     const newWindow = window.open(createLogsUrl("/", searchParams), "_blank")
     if (!newWindow) {
@@ -101,13 +91,13 @@ export function SelectedBotsProvider({ children }: { children: ReactNode }) {
     }
 
     // Set up message handler
-    const handleReady = setupPostMessageHandler({
+    setupPostMessageHandler({
       windowId,
-      botUuids
+      botUuids,
+      onComplete: () => {
+        // Each handler cleans itself up after successful communication
+      }
     })
-
-    // Store the handler in a ref for cleanup
-    messageHandlerRef.current = handleReady
   }
 
   return (

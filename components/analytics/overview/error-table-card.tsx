@@ -20,8 +20,8 @@ const sortOptions = [
   { label: "Count (Highest)", value: "count-desc" },
   { label: "Category (A-Z)", value: "category-asc" },
   { label: "Category (Z-A)", value: "category-desc" },
-  { label: "Priority (Highest)", value: "priority-desc" },
-  { label: "Priority (Lowest)", value: "priority-asc" }
+  { label: "Priority (Highest)", value: "priority-asc" },
+  { label: "Priority (Lowest)", value: "priority-desc" }
 ]
 
 // Convert sort option string to SortingState
@@ -122,7 +122,11 @@ export function ErrorTableCard({ data }: ErrorTableCardProps) {
       typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue
     setSorting(newSorting)
     const sortOption = getSortOption(newSorting)
-    localStorage.setItem(ERROR_TABLE_SORT_STORAGE_KEY, sortOption)
+    try {
+      localStorage.setItem(ERROR_TABLE_SORT_STORAGE_KEY, sortOption)
+    } catch (error) {
+      console.warn("Failed to save sort preference:", error)
+    }
   }
 
   return (

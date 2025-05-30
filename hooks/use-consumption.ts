@@ -61,7 +61,8 @@ export function useConsumption({ startDate, endDate }: UseConsumptionParams) {
       const totalTranscriptionTokens = getTotalTranscriptionTokens(tokenConsumption)
       const totalStreamingTokens = getTotalStreamingTokens(tokenConsumption)
       const totalTokensConsumed = getTotalTokensConsumed(tokenConsumption)
-      const chartData = getChartData(tokenConsumption, startDate!, endDate!)
+      const chartData =
+        startDate && endDate ? getChartData(tokenConsumption, startDate, endDate) : []
 
       return {
         tokenConsumption,

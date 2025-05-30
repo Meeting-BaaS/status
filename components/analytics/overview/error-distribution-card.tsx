@@ -211,10 +211,10 @@ export function ErrorDistributionCard({
                       nameKey="name"
                       strokeWidth={0}
                       animationDuration={800}
-                      onMouseEnter={(_, index) => handleCellHover(filteredData[index])}
+                      onMouseEnter={(data) => handleCellHover(data)}
                       onMouseLeave={handleCellLeave}
                       className="cursor-pointer"
-                      onClick={(_, index) => handleCellClick(filteredData[index])}
+                      onClick={(data) => handleCellClick(data)}
                     >
                       {filteredData.map((entry) => (
                         <Cell key={entry.name} fill={colorScale(entry.name) as string} />
