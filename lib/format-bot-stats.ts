@@ -254,7 +254,8 @@ function createErrorTableEntry(
     category: allErrorCategories.find((c) => c.value === category)?.label || category,
     priority: getPriorityForError(category) as ErrorPriority,
     platforms: getErrorPlatformDistribution(group.bots),
-    count: group.bots.length
+    count: group.bots.length,
+    botUuids: group.bots.map((bot) => bot.uuid)
   }
 }
 

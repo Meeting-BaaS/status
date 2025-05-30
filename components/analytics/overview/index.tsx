@@ -1,7 +1,7 @@
 import type { FormattedBotData, PlatformDistribution, ErrorDistribution } from "@/lib/types"
 import { ErrorDistributionCard } from "@/components/analytics/overview/error-distribution-card"
 import { ErrorTableCard } from "@/components/analytics/overview/error-table-card"
-import type { ErrorTableData } from "@/components/analytics/overview/error-table-columns"
+import type { ErrorTableEntry } from "@/lib/types"
 import { PlatformDistributionCard } from "@/components/analytics/overview/platform-distribution-card"
 import { PlatformPerformanceCard } from "@/components/analytics/overview/platform-performance-card"
 
@@ -10,7 +10,7 @@ interface OverviewProps {
   allBots: FormattedBotData[]
   errorDistributionData: ErrorDistribution[]
   errorBots: FormattedBotData[]
-  errorTableData: ErrorTableData[]
+  errorTableData: ErrorTableEntry[]
 }
 
 export default function Overview({

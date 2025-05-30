@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber, formatPercentage } from "@/lib/utils"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useCallback } from "react"
 import {
   Cell,
   Pie,
@@ -23,6 +23,9 @@ import type { ErrorDistribution } from "@/lib/types"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CheckSquare, Square, RotateCcw } from "lucide-react"
+import { useSelectedBots } from "@/hooks/use-selected-bots"
+import type { FormattedBotData } from "@/lib/types"
+import { debounce } from "lodash-es"
 
 interface ErrorDistributionCardProps {
   errorDistributionData: ErrorDistribution[]
@@ -62,10 +65,67 @@ export function ErrorDistributionCard({
     removeErrorValue,
     selectAll,
     selectNone,
-    selectDefault
+    selectDefault,
+    filteredBots
   } = useSelectedErrorContext()
+  const { setHoveredBots, selectBotsByCategory } = useSelectedBots()
   const [filteredData, setFilteredData] = useState(errorDistributionData)
   const [filteredTotal, setFilteredTotal] = useState(totalErrors)
+
+  // Memoize bots by error type for better performance
+  const botsByErrorType = useMemo(() => {
+    return filteredBots.reduce(
+      (acc, bot) => {
+        const errorType = bot.status.value
+        if (!acc[errorType]) {
+          acc[errorType] = []
+        }
+        acc[errorType].push(bot)
+        return acc
+      },
+      {} as Record<string, FormattedBotData[]>
+    )
+  }, [filteredBots])
+
+  // Debounced hover handler to prevent rapid state updates
+  const debouncedSetHoveredBots = useMemo(
+    () => debounce((bots: FormattedBotData[]) => setHoveredBots(bots), 100),
+    [setHoveredBots]
+  )
+
+  // Handle cell hover
+  const handleCellHover = useCallback(
+    (entry: ErrorDistribution) => {
+      const botsWithError = botsByErrorType[entry.name] || []
+      if (botsWithError.length > 0) {
+        debouncedSetHoveredBots(botsWithError)
+      }
+    },
+    [botsByErrorType, debouncedSetHoveredBots]
+  )
+
+  // Handle cell leave
+  const handleCellLeave = useCallback(() => {
+    debouncedSetHoveredBots([])
+  }, [debouncedSetHoveredBots])
+
+  // Handle cell click
+  const handleCellClick = useCallback(
+    (entry: ErrorDistribution) => {
+      const botsWithError = botsByErrorType[entry.name] || []
+      if (botsWithError.length > 0) {
+        selectBotsByCategory(botsWithError)
+      }
+    },
+    [botsByErrorType, selectBotsByCategory]
+  )
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetHoveredBots.cancel()
+    }
+  }, [debouncedSetHoveredBots])
 
   // Update filtered data when selection changes or new data arrives
   useEffect(() => {
@@ -151,6 +211,10 @@ export function ErrorDistributionCard({
                       nameKey="name"
                       strokeWidth={0}
                       animationDuration={800}
+                      onMouseEnter={(_, index) => handleCellHover(filteredData[index])}
+                      onMouseLeave={handleCellLeave}
+                      className="cursor-pointer"
+                      onClick={(_, index) => handleCellClick(filteredData[index])}
                     >
                       {filteredData.map((entry) => (
                         <Cell key={entry.name} fill={colorScale(entry.name) as string} />

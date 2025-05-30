@@ -14,11 +14,17 @@ import { genericError } from "@/lib/errors"
 import Filters from "@/components/filters"
 import { MainTabs } from "@/components/ui/main-tabs"
 import dynamic from "next/dynamic"
+import { cn } from "@/lib/utils"
+import { SelectedErrorProvider } from "@/contexts/selected-error-context"
+import { SelectedBotsProvider } from "@/contexts/selected-bots-context"
+import { SelectedBotsButton } from "@/components/analytics/selected-bots-button"
+
 const Loading = () => (
   <div className="flex h-96 items-center justify-center">
     <Loader2 className="size-8 animate-spin text-primary" />
   </div>
 )
+
 const Overview = dynamic(() => import("@/components/analytics/overview"), {
   loading: Loading
 })
@@ -31,8 +37,6 @@ const Duration = dynamic(() => import("@/components/analytics/duration"), {
 const IssueReports = dynamic(() => import("@/components/analytics/issue-reports"), {
   loading: Loading
 })
-import { cn } from "@/lib/utils"
-import { SelectedErrorProvider } from "@/contexts/selected-error-context"
 
 export const DEFAULT_LIMIT = limitOptions[0].value
 
@@ -167,14 +171,22 @@ export function Analytics() {
                 tabs={tabs}
                 containerClassName="mb-4"
               />
-              <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
-                <SelectedErrorProvider
-                  initialErrorDistribution={data.errorDistributionData}
-                  allBots={data.allBots}
-                >
-                  {renderTabContent}
-                </SelectedErrorProvider>
-              </div>
+              <SelectedErrorProvider
+                initialErrorDistribution={data.errorDistributionData}
+                allBots={data.allBots}
+              >
+                <SelectedBotsProvider>
+                  <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
+                    {renderTabContent}
+                  </div>
+                  <SelectedBotsButton
+                    dateRange={{
+                      startDate: dateRange?.startDate ?? null,
+                      endDate: dateRange?.endDate ?? null
+                    }}
+                  />
+                </SelectedBotsProvider>
+              </SelectedErrorProvider>
             </>
           )}
         </div>

@@ -189,6 +189,7 @@ export type ErrorTableEntry = {
   priority: ErrorPriority
   platforms: Record<PlatformName, number>
   count: number
+  botUuids: string[]
 }
 
 export type WebhookErrorGroup = {

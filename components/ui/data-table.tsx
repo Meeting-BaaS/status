@@ -10,7 +10,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  type OnChangeFn
+  type OnChangeFn,
+  type Row
 } from "@tanstack/react-table"
 
 import {
@@ -33,6 +34,12 @@ interface DataTableProps<TData, TValue> {
   defaultColumnVisibility?: VisibilityState
   sortOptions?: { label: string; value: string }[]
   onSortingChange?: OnChangeFn<SortingState>
+  onRowHover?: (row: Row<TData>) => void
+  onRowLeave?: () => void
+  onRowClick?: (row: Row<TData>) => void
+  enableRowSelection?: boolean
+  enableMultiRowSelection?: boolean
+  enableRowHover?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -41,7 +48,13 @@ export function DataTable<TData, TValue>({
   defaultSort = [],
   defaultColumnVisibility = {},
   sortOptions,
-  onSortingChange
+  onSortingChange,
+  onRowHover,
+  onRowLeave,
+  onRowClick,
+  enableRowSelection,
+  enableMultiRowSelection,
+  enableRowHover
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(defaultSort)
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
@@ -64,12 +77,21 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    enableRowSelection,
+    enableMultiRowSelection,
     state: {
       sorting,
       columnVisibility,
       rowSelection
     }
   })
+
+  const handleRowClick = (row: Row<TData>) => {
+    if (enableRowSelection) {
+      row.toggleSelected()
+    }
+    onRowClick?.(row)
+  }
 
   return (
     <div>
@@ -107,7 +129,17 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  onMouseEnter={() => enableRowHover && onRowHover?.(row)}
+                  onMouseLeave={() => enableRowHover && onRowLeave?.()}
+                  onClick={() => handleRowClick(row)}
+                  className={cn(
+                    enableRowHover && "cursor-pointer",
+                    enableRowSelection && "cursor-pointer"
+                  )}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

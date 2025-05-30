@@ -2,15 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { SortableHeader } from "@/components/ui/sortable-header"
 import { getErrorMessageColor } from "@/lib/utils"
 import { Badge, type badgeVariants } from "@/components/ui/badge"
-
-export interface ErrorTableData {
-  type: string
-  message: string
-  category?: string
-  priority?: string
-  platforms: Record<string, number>
-  count: number
-}
+import type { ErrorTableEntry } from "@/lib/types"
 
 type Priority = "critical" | "high" | "medium" | "low"
 const priorityOrder: Record<Priority, number> = {
@@ -20,7 +12,7 @@ const priorityOrder: Record<Priority, number> = {
   low: 3
 }
 
-export const errorTableColumns: ColumnDef<ErrorTableData>[] = [
+export const errorTableColumns: ColumnDef<ErrorTableEntry>[] = [
   {
     accessorKey: "type",
     header: ({ column }) => <SortableHeader column={column} title="Error Type" />,
