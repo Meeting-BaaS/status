@@ -37,7 +37,7 @@ Meeting BaaS Analytics is a powerful dashboard that provides detailed insights i
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Meeting-Baas/analytics
+   git clone https://github.com/Meeting-Baas/analytics meeting-baas-analytics
    cd meeting-baas-analytics
    ```
 
