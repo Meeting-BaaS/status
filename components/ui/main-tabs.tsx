@@ -71,10 +71,10 @@ export const MainTabs = ({
             type="button"
             key={tab.id}
             className={cn(
-              "group relative px-5 py-3 transition-colors after:absolute after:right-0 after:bottom-0 after:left-0 after:h-0.5 after:bg-transparent after:transition-colors hover:after:bg-muted-foreground focus:outline-none",
+              "group relative px-5 py-3 transition-colors",
               currentTab === tab.id
                 ? "font-semibold text-primary disabled:font-normal disabled:text-muted-foreground/40"
-                : "text-muted-foreground hover:text-foreground disabled:text-muted-foreground/40"
+                : "text-muted-foreground hover:text-foreground disabled:text-muted-foreground/40 after:absolute after:right-0 after:bottom-0 after:left-0 after:h-0.5 after:bg-transparent after:transition-colors hover:after:bg-muted-foreground focus:outline-none"
             )}
             onClick={() => setCurrentTab(tab.id)}
             disabled={disabled}
