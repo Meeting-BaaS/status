@@ -1,23 +1,19 @@
 <p align="center"><a href="https://discord.com/invite/dsvFgDTr6c"><img height="60px" src="https://user-images.githubusercontent.com/31022056/158916278-4504b838-7ecb-4ab9-a900-7dc002aade78.png" alt="Join our Discord!"></a></p>
 
-# Meeting BaaS Settings
+# Meeting BaaS Analytics
 
-A simple settings interface built with Next.js to handle user settings.
+A comprehensive analytics dashboard built with Next.js to monitor and analyze meeting bot performance across multiple platforms.
 
-## Meeting BaaS Overview
+## Meeting BaaS Analytics Overview
 
-Meeting BaaS (Backend as a Service) is a platform that provides backend services for video meetings and collaboration. The platform offers:
+Meeting BaaS Analytics is a powerful dashboard that provides detailed insights into your meeting bot performance. The platform offers:
 
-Meeting BaaS is a comprehensive meeting intelligence API platform providing programmatic access to meeting data across Zoom, Google Meet, and Microsoft Teams. We offer a complete suite of tools that enable developers to deploy recording bots to meetings, sync calendar events from major providers, create AI-powered meeting agents that can speak and interact, access meeting transcripts and recordings, and receive real-time updates through webhooks.
-
-Our platform delivers multiple integration paths including RESTful APIs with JSON payloads, a fully-typed TypeScript SDK, event-driven webhook architecture, and open-source components for customization. With core APIs spanning Meeting Bots, Calendars, Speaking Bots, and Webhooks, Meeting BaaS provides enterprise-grade meeting intelligence features that can be integrated into any application with minimal development effort.
-
-- **API Integration**: RESTful APIs for calendars, meetings, users, and webhooks management
-- **SDK Support**: TypeScript SDK for easy integration into web applications
-- **Bot Capabilities**: Support for speaking bots and interactive meeting assistants
-- **Transcript Processing**: Tools for analyzing and searching meeting transcripts
-
-This settings application allows users to configure their Meeting BaaS preferences and integrations.
+- **Real-time Performance Monitoring**: Track bot success rates, error rates, and performance metrics across Zoom, Google Meet, and Microsoft Teams
+- **Advanced Analytics**: Detailed analysis of meeting durations, error distributions, and platform-specific metrics
+- **Interactive Visualizations**: Beautiful and responsive charts for data visualization
+- **Customizable Filters**: Filter data by date range, platform, error type, and more
+- **Error Analysis**: Comprehensive insights into error patterns and trends
+- **Duration Analytics**: Comprehensive analysis of meeting durations and patterns
 
 ## Tech Stack
 
@@ -25,6 +21,7 @@ This settings application allows users to configure their Meeting BaaS preferenc
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4
 - **UI Components**: Shadcn
+- **Charts**: Recharts with D3
 - **Authentication**: Centralised Auth app integration
 - **Package Manager**: pnpm
 
@@ -40,8 +37,8 @@ This settings application allows users to configure their Meeting BaaS preferenc
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Meeting-Baas/settings
-   cd meeting-baas-auth
+   git clone https://github.com/Meeting-Baas/analytics meeting-baas-analytics
+   cd meeting-baas-analytics
    ```
 
 2. Install dependencies:
@@ -72,9 +69,7 @@ The application will be available at `http://localhost:3000`
 
 This project is pre-configured to integrate with the authentication app. Ensure the authentication service is running and properly configured. Update the `.env` file with the required environment variables for authentication.
 
-### Guidelines
-
-## Design System Documentation for the Analytics Page
+## Design System Documentation
 
 ### ShadCN Components Usage
 
@@ -101,19 +96,19 @@ import {
 
 ### Layout Patterns
 
-#### Page Structure:
+#### Page Structure
 
 - Header with title and description
-- Tabbed interface for category separation
+- Tabbed interface for different analytics views
 - Content sections with clear visual hierarchy
 
-#### Component Patterns:
+#### Component Patterns
 
-- Service-wide controls in highlighted gradient cards
-- Individual items in standard cards with consistent spacing
-- Radio options in 2×4 grids for responsive layout
+- Analytics cards with consistent styling
+- Interactive charts with tooltips
+- Filter controls for data manipulation
 
-### Common Element Styling:
+### Common Element Styling
 
 ```tsx
 // Tab styling with animated underline
@@ -127,23 +122,13 @@ import {
        style={{ backgroundColor: colorVariable }}></div>
 </TabsTrigger>
 
-// Highlighted sections
+// Analytics cards
 <div className="p-6 bg-gradient-to-r from-muted/30 to-background rounded-lg border border-border/70 shadow-sm">
   {/* Content */}
 </div>
-
-// Radio options
-<label
-  className={`flex items-center space-x-2 bg-background p-4 rounded-md
-              hover:bg-muted/80 transition-colors cursor-pointer border
-              ${isSelected ? 'ring-2 ring-primary border-primary' : 'border-muted'}`}
->
-  <RadioGroupItem value="value" id="id" />
-  <Label className="text-sm font-medium cursor-pointer">Label</Label>
-</label>
 ```
 
-### State Management / Data Fetching Pattern:
+### State Management / Data Fetching Pattern
 
 ```tsx
 const [loading, setLoading] = useState(true);
@@ -167,11 +152,6 @@ useEffect(() => {
 }, []);
 ```
 
-### Central Types System:
-
-- Define all types in a dedicated types file
-- Use consistent naming across components
-
 ### Notification System
 
 We use Sonner toast for notifications:
@@ -186,15 +166,13 @@ toast.error("Failed to complete action");
 
 ### API Integration
 
-Mock the API first, then replace with real implementation:
+The analytics API provides comprehensive data for visualization:
 
 ```tsx
 // Example API function in your analytics-api.ts
 export async function getAnalyticsData(
   userToken: string
 ): Promise<AnalyticsData> {
-  console.log("[MOCK API] Fetching analytics data");
-
   try {
     return await axios({
       method: "GET",
@@ -202,11 +180,8 @@ export async function getAnalyticsData(
       headers: { Authorization: userToken },
     }).data;
   } catch (error) {
-    console.error("[MOCK API] Error:", error);
-    // Return mock data for development
-    return {
-      /* mock data */
-    };
+    console.error("[API] Error:", error);
+    throw error;
   }
 }
 ```
