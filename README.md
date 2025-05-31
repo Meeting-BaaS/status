@@ -12,7 +12,7 @@ Meeting BaaS Analytics is a powerful dashboard that provides detailed insights i
 - **Advanced Analytics**: Detailed analysis of meeting durations, error distributions, and platform-specific metrics
 - **Interactive Visualizations**: Beautiful and responsive charts for data visualization
 - **Customizable Filters**: Filter data by date range, platform, error type, and more
-- **Error Analysis**: Deep insights into error patterns and trends
+- **Error Analysis**: Comprehensive insights into error patterns and trends
 - **Duration Analytics**: Comprehensive analysis of meeting durations and patterns
 
 ## Tech Stack
@@ -96,19 +96,19 @@ import {
 
 ### Layout Patterns
 
-#### Page Structure:
+#### Page Structure
 
 - Header with title and description
 - Tabbed interface for different analytics views
 - Content sections with clear visual hierarchy
 
-#### Component Patterns:
+#### Component Patterns
 
 - Analytics cards with consistent styling
 - Interactive charts with tooltips
 - Filter controls for data manipulation
 
-### Common Element Styling:
+### Common Element Styling
 
 ```tsx
 // Tab styling with animated underline
@@ -128,7 +128,7 @@ import {
 </div>
 ```
 
-### State Management / Data Fetching Pattern:
+### State Management / Data Fetching Pattern
 
 ```tsx
 const [loading, setLoading] = useState(true);
