@@ -14,18 +14,14 @@ import {
 } from "recharts"
 import { scaleOrdinal } from "d3-scale"
 import { schemeTableau10 } from "d3-scale-chromatic"
-import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "motion/react"
-import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { AnimatedNumber } from "@/components/ui/animated-number"
 import type { ErrorDistribution } from "@/lib/types"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { CheckSquare, Square, RotateCcw } from "lucide-react"
 import { useSelectedBots } from "@/hooks/use-selected-bots"
 import type { FormattedBotData } from "@/lib/types"
 import { debounce } from "lodash-es"
+import { ErrorDistributionLegend } from "@/components/analytics/error-distribution-legend"
 
 interface ErrorDistributionCardProps {
   errorDistributionData: ErrorDistribution[]
@@ -244,101 +240,7 @@ export function ErrorDistributionCard({
               </ChartContainer>
             </div>
           </div>
-
-          {/* Interactive Legend */}
-          <div className="md:-mt-16 grow space-y-4">
-            <div className="flex items-center justify-between md:pr-4">
-              <div>
-                <div className="font-medium text-sm">Error Types</div>
-                <div className="text-muted-foreground text-xs">
-                  {selectedErrorValues.length === 0
-                    ? "No error types selected"
-                    : `${selectedErrorValues.length} of ${errorDistributionData.length} available error types selected`}
-                </div>
-              </div>
-              <TooltipProvider>
-                <div className="flex gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleSelectAll}
-                        disabled={selectedErrorValues.length === errorDistributionData.length}
-                        aria-label="Select All"
-                      >
-                        <CheckSquare />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Select All</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleSelectNone}
-                        disabled={selectedErrorValues.length === 0}
-                        aria-label="Select None"
-                      >
-                        <Square />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Select None</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={selectDefault}
-                        aria-label="Reset to Default Selection"
-                      >
-                        <RotateCcw />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Reset to Default Selection</TooltipContent>
-                  </Tooltip>
-                </div>
-              </TooltipProvider>
-            </div>
-            <ScrollArea className="h-80 md:pr-4">
-              <div className="space-y-2">
-                <AnimatePresence>
-                  {sortedErrorTypes.length > 0 ? (
-                    sortedErrorTypes.map((item) => (
-                      <motion.button
-                        type="button"
-                        key={item.name}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-md p-3 transition-colors",
-                          selectedErrorValues.includes(item.name) && "bg-muted",
-                          "hover:bg-muted/50"
-                        )}
-                        onClick={() => handleLegendClick(item.name)}
-                      >
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{
-                            backgroundColor: colorScale(item.name) as string,
-                            opacity: selectedErrorValues.includes(item.name) ? 1 : 0.3
-                          }}
-                        />
-                        <span className="flex-1 truncate text-left text-sm">{item.name}</span>
-                        <span className="font-medium text-sm">{formatNumber(item.value)}</span>
-                      </motion.button>
-                    ))
-                  ) : (
-                    <div className="text-muted-foreground text-sm">No error types available</div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </ScrollArea>
-          </div>
+          <ErrorDistributionLegend errorDistributionData={errorDistributionData} variant="card" />
         </div>
       </CardContent>
     </Card>

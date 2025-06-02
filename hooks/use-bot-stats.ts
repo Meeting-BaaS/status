@@ -105,6 +105,7 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         durationDistributionData,
         issueReportData,
         averageDuration: calculateAverageDuration(formattedBots),
+        totalBots: formattedBots.length,
         dateRange: firstBotDate && lastBotDate ? { firstBotDate, lastBotDate } : null
       }
     },
