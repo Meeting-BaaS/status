@@ -14,7 +14,7 @@ export function ErrorDistributionPopover({ errorDistributionData }: ErrorDistrib
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full md:w-auto">
-          Select error types
+          Select Error Types
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0 md:w-96" align="end">
