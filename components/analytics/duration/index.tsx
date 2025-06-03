@@ -4,30 +4,34 @@ import { DurationDistributionCard } from "@/components/analytics/duration/durati
 import type {
   DurationTimelineEntry,
   PlatformDurationEntry,
-  DurationDistributionEntry
+  DurationDistributionEntry,
+  ErrorDistribution
 } from "@/lib/types"
+import { ErrorDistributionPopover } from "@/components/analytics/error-distribution-popover"
 
 interface DurationProps {
   durationTimelineData: DurationTimelineEntry[]
   platformDurationData: PlatformDurationEntry[]
   durationDistributionData: DurationDistributionEntry[]
-  averageDuration: number
+  errorDistributionData: ErrorDistribution[]
 }
 
 export default function Duration({
   durationTimelineData,
   platformDurationData,
   durationDistributionData,
-  averageDuration
+  errorDistributionData
 }: DurationProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <DurationTimelineCard durationTimelineData={durationTimelineData} />
-      <DurationPlatformCard platformDurationData={platformDurationData} />
-      <DurationDistributionCard
-        distributionData={durationDistributionData}
-        averageDuration={averageDuration}
-      />
-    </div>
+    <>
+      <div className="flex md:justify-end">
+        <ErrorDistributionPopover errorDistributionData={errorDistributionData} />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DurationTimelineCard durationTimelineData={durationTimelineData} />
+        <DurationPlatformCard platformDurationData={platformDurationData} />
+        <DurationDistributionCard distributionData={durationDistributionData} />
+      </div>
+    </>
   )
 }

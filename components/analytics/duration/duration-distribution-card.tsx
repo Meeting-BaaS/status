@@ -3,13 +3,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber } from "@/lib/utils"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,10 +18,12 @@ import {
 import { type ScaleOrdinal, scaleOrdinal } from "d3-scale"
 import { schemeTableau10 } from "d3-scale-chromatic"
 import type { DurationDistributionEntry } from "@/lib/types"
+import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
+import { getDurationDistributionData } from "@/lib/format-bot-stats"
 
 interface DurationDistributionCardProps {
   distributionData: DurationDistributionEntry[]
-  averageDuration: number
 }
 
 function DurationDistributionTooltip(
@@ -57,18 +58,23 @@ function DurationDistributionTooltip(
   )
 }
 
-export function DurationDistributionCard({
-  distributionData,
-  averageDuration
-}: DurationDistributionCardProps) {
+export function DurationDistributionCard({ distributionData }: DurationDistributionCardProps) {
+  const { filteredBots } = useSelectedErrorContext()
+  const [filteredData, setFilteredData] = useState(distributionData)
+
+  useEffect(() => {
+    const filteredData = getDurationDistributionData(filteredBots)
+    setFilteredData(filteredData)
+  }, [filteredBots])
+
   const colorScale = useMemo(() => {
     return scaleOrdinal<string, string>()
-      .domain(distributionData.map((d) => d.range))
+      .domain(filteredData.map((d) => d.range))
       .range(schemeTableau10)
-  }, [distributionData])
+  }, [filteredData])
 
   const chartConfig = useMemo(() => {
-    return distributionData.reduce(
+    return filteredData.reduce(
       (acc, item) => {
         acc[item.range] = {
           label: item.range,
@@ -78,19 +84,22 @@ export function DurationDistributionCard({
       },
       {} as Record<string, { label: string; color: string }>
     )
-  }, [distributionData, colorScale])
+  }, [filteredData, colorScale])
 
   return (
     <Card className="dark:bg-baas-black">
       <CardHeader>
-        <CardTitle>Duration Distribution</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Duration Distribution
+          <SelectedErrorBadge />
+        </CardTitle>
         <CardDescription>Distribution of bot durations</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="relative h-80">
           <ChartContainer config={chartConfig} className="h-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={distributionData}>
+              <BarChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="range"
@@ -108,7 +117,7 @@ export function DurationDistributionCard({
                 />
                 <Tooltip
                   content={(props: RechartsTooltipProps<number, string>) =>
-                    DurationDistributionTooltip(props, distributionData, colorScale)
+                    DurationDistributionTooltip(props, filteredData, colorScale)
                   }
                   cursor={false}
                   wrapperStyle={{ outline: "none", zIndex: 10 }}
@@ -119,7 +128,7 @@ export function DurationDistributionCard({
                   radius={[4, 4, 0, 0]}
                   animationDuration={800}
                 >
-                  {distributionData.map((entry) => (
+                  {filteredData.map((entry) => (
                     <Cell key={entry.range} fill={colorScale(entry.range) as string} />
                   ))}
                 </Bar>

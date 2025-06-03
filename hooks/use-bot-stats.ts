@@ -14,7 +14,6 @@ import {
   getIssueReportData,
   filterAndGroupErrorBots
 } from "@/lib/format-bot-stats"
-import { calculateAverageDuration } from "@/lib/utils"
 
 interface UseBotStatsParams {
   offset: number
@@ -104,7 +103,6 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         platformDurationData,
         durationDistributionData,
         issueReportData,
-        averageDuration: calculateAverageDuration(formattedBots),
         totalBots: formattedBots.length,
         dateRange: firstBotDate && lastBotDate ? { firstBotDate, lastBotDate } : null
       }

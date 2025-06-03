@@ -120,7 +120,7 @@ export function Analytics() {
             durationTimelineData={data.durationTimelineData}
             platformDurationData={data.platformDurationData}
             durationDistributionData={data.durationDistributionData}
-            averageDuration={data.averageDuration}
+            errorDistributionData={data.errorDistributionData}
           />
         )
       case "issue-reports":
