@@ -108,21 +108,9 @@ export function Analytics() {
           />
         )
       case "error-analysis":
-        return (
-          <ErrorAnalysis
-            timelineData={data.timelineData}
-            errorDistributionData={data.errorDistributionData}
-          />
-        )
+        return <ErrorAnalysis errorDistributionData={data.errorDistributionData} />
       case "duration":
-        return (
-          <Duration
-            durationTimelineData={data.durationTimelineData}
-            platformDurationData={data.platformDurationData}
-            durationDistributionData={data.durationDistributionData}
-            errorDistributionData={data.errorDistributionData}
-          />
-        )
+        return <Duration errorDistributionData={data.errorDistributionData} />
       case "issue-reports":
         return (
           <IssueReports

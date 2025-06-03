@@ -22,10 +22,6 @@ import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 import { getDurationDistributionData } from "@/lib/format-bot-stats"
 
-interface DurationDistributionCardProps {
-  distributionData: DurationDistributionEntry[]
-}
-
 function DurationDistributionTooltip(
   props: RechartsTooltipProps<number, string>,
   distributionData: DurationDistributionEntry[],
@@ -58,10 +54,10 @@ function DurationDistributionTooltip(
   )
 }
 
-export function DurationDistributionCard({ distributionData }: DurationDistributionCardProps) {
+export function DurationDistributionCard() {
   const { filteredBots } = useSelectedErrorContext()
 
-  const filteredData = useMemo(() => {
+  const filteredData: DurationDistributionEntry[] = useMemo(() => {
     return getDurationDistributionData(filteredBots)
   }, [filteredBots])
 

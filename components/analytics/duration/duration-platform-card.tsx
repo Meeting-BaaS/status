@@ -19,10 +19,6 @@ import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 import { getPlatformDurationData } from "@/lib/format-bot-stats"
 
-interface DurationPlatformCardProps {
-  platformDurationData: PlatformDurationEntry[]
-}
-
 function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload } = props
 
@@ -45,10 +41,10 @@ function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
   )
 }
 
-export function DurationPlatformCard({ platformDurationData }: DurationPlatformCardProps) {
+export function DurationPlatformCard() {
   const { filteredBots } = useSelectedErrorContext()
 
-  const filteredData = useMemo(() => {
+  const filteredData: PlatformDurationEntry[] = useMemo(() => {
     return getPlatformDurationData(filteredBots)
   }, [filteredBots])
 

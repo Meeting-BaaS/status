@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   Line,
   LineChart,
@@ -22,10 +22,6 @@ import type { TimelineEntry } from "@/lib/types"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 import { getTimelineData } from "@/lib/format-bot-stats"
 import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
-
-interface ErrorTimelineCardProps {
-  timelineData: TimelineEntry[]
-}
 
 function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload, label } = props
@@ -67,10 +63,10 @@ function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   )
 }
 
-export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
+export function ErrorTimelineCard() {
   const { filteredBots } = useSelectedErrorContext()
 
-  const filteredData = useMemo(() => {
+  const filteredData: TimelineEntry[] = useMemo(() => {
     return getTimelineData(filteredBots)
   }, [filteredBots])
 

@@ -23,10 +23,6 @@ import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 import { getDurationTimelineData } from "@/lib/format-bot-stats"
 import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 
-interface DurationTimelineCardProps {
-  durationTimelineData: DurationTimelineEntry[]
-}
-
 function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload, label } = props
 
@@ -55,10 +51,10 @@ function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   )
 }
 
-export function DurationTimelineCard({ durationTimelineData }: DurationTimelineCardProps) {
+export function DurationTimelineCard() {
   const { filteredBots } = useSelectedErrorContext()
 
-  const filteredData = useMemo(() => {
+  const filteredData: DurationTimelineEntry[] = useMemo(() => {
     return getDurationTimelineData(filteredBots)
   }, [filteredBots])
 

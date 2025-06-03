@@ -18,10 +18,6 @@ import type { PlatformDistribution } from "@/lib/types"
 import { getPlatformDistribution } from "@/lib/format-bot-stats"
 import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
 
-interface PlatformPerformanceCardProps {
-  platformDistribution: PlatformDistribution[]
-}
-
 const otherStatus = "var(--other-status)"
 
 function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>) {
@@ -70,10 +66,10 @@ function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>)
   )
 }
 
-export function PlatformPerformanceCard({ platformDistribution }: PlatformPerformanceCardProps) {
+export function PlatformPerformanceCard() {
   const { filteredBots } = useSelectedErrorContext()
 
-  const filteredDistribution = useMemo(() => {
+  const filteredDistribution: PlatformDistribution[] = useMemo(() => {
     return getPlatformDistribution(filteredBots)
   }, [filteredBots])
 
