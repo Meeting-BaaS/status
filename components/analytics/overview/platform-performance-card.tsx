@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber, platformColors } from "@/lib/utils"
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import {
   Cell,
   Pie,
@@ -72,11 +72,9 @@ function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>)
 
 export function PlatformPerformanceCard({ platformDistribution }: PlatformPerformanceCardProps) {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredDistribution, setFilteredDistribution] = useState(platformDistribution)
 
-  useEffect(() => {
-    const filteredData = getPlatformDistribution(filteredBots)
-    setFilteredDistribution(filteredData)
+  const filteredDistribution = useMemo(() => {
+    return getPlatformDistribution(filteredBots)
   }, [filteredBots])
 
   const chartData = useMemo(() => {

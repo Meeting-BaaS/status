@@ -22,8 +22,9 @@ export function DateRangeInfo({
   }
   return (
     <div className="text-muted-foreground text-sm">
-      Results from {totalBots} bots between {dayjs(lastBotDate).utc().local().format("D MMM YYYY")}{" "}
-      to {dayjs(firstBotDate).utc().local().format("D MMM YYYY")}
+      Results from {totalBots ?? 0} bots between{" "}
+      {dayjs(lastBotDate).utc().local().format("D MMM YYYY")} to{" "}
+      {dayjs(firstBotDate).utc().local().format("D MMM YYYY")}
     </div>
   )
 }

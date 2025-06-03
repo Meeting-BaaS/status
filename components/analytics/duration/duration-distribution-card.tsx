@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   Bar,
   BarChart,
@@ -60,11 +60,9 @@ function DurationDistributionTooltip(
 
 export function DurationDistributionCard({ distributionData }: DurationDistributionCardProps) {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredData, setFilteredData] = useState(distributionData)
 
-  useEffect(() => {
-    const filteredData = getDurationDistributionData(filteredBots)
-    setFilteredData(filteredData)
+  const filteredData = useMemo(() => {
+    return getDurationDistributionData(filteredBots)
   }, [filteredBots])
 
   const colorScale = useMemo(() => {

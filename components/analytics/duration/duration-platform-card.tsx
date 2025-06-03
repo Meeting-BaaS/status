@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatDuration, formatNumber, platformColors } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   Cell,
   Pie,
@@ -47,11 +47,9 @@ function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
 
 export function DurationPlatformCard({ platformDurationData }: DurationPlatformCardProps) {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredData, setFilteredData] = useState(platformDurationData)
 
-  useEffect(() => {
-    const filteredData = getPlatformDurationData(filteredBots)
-    setFilteredData(filteredData)
+  const filteredData = useMemo(() => {
+    return getPlatformDurationData(filteredBots)
   }, [filteredBots])
 
   // Calculate total average duration

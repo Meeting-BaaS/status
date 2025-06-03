@@ -69,11 +69,9 @@ function ErrorTimelineTooltip(props: RechartsTooltipProps<number, string>) {
 
 export function ErrorTimelineCard({ timelineData }: ErrorTimelineCardProps) {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredData, setFilteredData] = useState(timelineData)
 
-  useEffect(() => {
-    const filteredData = getTimelineData(filteredBots)
-    setFilteredData(filteredData)
+  const filteredData = useMemo(() => {
+    return getTimelineData(filteredBots)
   }, [filteredBots])
 
   // Get all unique priorities from the timeline data

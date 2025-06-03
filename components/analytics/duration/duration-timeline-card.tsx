@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatDuration, formatNumber } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   Line,
   LineChart,
@@ -57,11 +57,9 @@ function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
 
 export function DurationTimelineCard({ durationTimelineData }: DurationTimelineCardProps) {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredData, setFilteredData] = useState(durationTimelineData)
 
-  useEffect(() => {
-    const filteredData = getDurationTimelineData(filteredBots)
-    setFilteredData(filteredData)
+  const filteredData = useMemo(() => {
+    return getDurationTimelineData(filteredBots)
   }, [filteredBots])
 
   // Create color scale for the lines

@@ -55,15 +55,7 @@ export function ErrorDistributionCard({
   errorDistributionData,
   totalErrors
 }: ErrorDistributionCardProps) {
-  const {
-    selectedErrorValues,
-    addErrorValue,
-    removeErrorValue,
-    selectAll,
-    selectNone,
-    selectDefault,
-    filteredBots
-  } = useSelectedErrorContext()
+  const { selectedErrorValues, filteredBots } = useSelectedErrorContext()
   const { setHoveredBots, selectBotsByCategory } = useSelectedBots()
   const [filteredData, setFilteredData] = useState(errorDistributionData)
   const [filteredTotal, setFilteredTotal] = useState(totalErrors)
@@ -158,29 +150,6 @@ export function ErrorDistributionCard({
       {} as Record<string, { label: string; color: string }>
     )
   }, [errorDistributionData, colorScale])
-
-  // Handle legend click
-  const handleLegendClick = (errorValue: string) => {
-    if (selectedErrorValues.includes(errorValue)) {
-      removeErrorValue(errorValue)
-    } else {
-      addErrorValue(errorValue)
-    }
-  }
-
-  // Handle select all/none
-  const handleSelectAll = () => {
-    selectAll(errorDistributionData.map((item) => item.name))
-  }
-
-  const handleSelectNone = () => {
-    selectNone()
-  }
-
-  // Sort error types alphabetically
-  const sortedErrorTypes = useMemo(() => {
-    return [...errorDistributionData].sort((a, b) => a.name.localeCompare(b.name))
-  }, [errorDistributionData])
 
   return (
     <Card className="dark:bg-baas-black">
