@@ -75,7 +75,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication Integration
 
-This project is pre-configured to integrate with the authentication app. While the app itself doesn't need authentication, certain UI features like header makes use of authentication services. Ensure the authentication service is running and properly configured. Update the `.env` file with the required environment variables for authentication.
+This project is pre-configured to integrate with the authentication app. While the app itself doesn't need authentication, certain UI features like the header make use of authentication services. Ensure the authentication service is running and properly configured. Update the `.env` file with the required environment variables for authentication.
 
 ## Design System Documentation
 

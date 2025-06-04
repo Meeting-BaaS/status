@@ -71,7 +71,6 @@ export const getPlatformDistribution = (bots: BotData[]): PlatformDistribution[]
       return {
         platform: key as PlatformName,
         count: bots.length,
-        percentage: (bots.length / bots.length) * 100,
         statusDistribution: {
           success: {
             count: successCount,
