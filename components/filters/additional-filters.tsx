@@ -29,7 +29,7 @@ const emptyFilters = {
   errorPriorityFilters: []
 }
 
-const ACCORDION_STORAGE_KEY = "analytics-accordion-state"
+const ACCORDION_STORAGE_KEY = "status-accordion-state"
 
 interface AdditionalFiltersProps {
   filters: FilterState

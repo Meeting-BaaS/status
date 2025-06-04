@@ -1,19 +1,27 @@
 <p align="center"><a href="https://discord.com/invite/dsvFgDTr6c"><img height="60px" src="https://user-images.githubusercontent.com/31022056/158916278-4504b838-7ecb-4ab9-a900-7dc002aade78.png" alt="Join our Discord!"></a></p>
 
-# Meeting BaaS Analytics
+# Meeting BaaS Status
 
-A comprehensive analytics dashboard built with Next.js to monitor and analyze meeting bot performance across multiple platforms.
+A public status page built with Next.js to monitor and analyze the status of all meeting bots across multiple platforms.
 
-## Meeting BaaS Analytics Overview
+## Meeting BaaS Status Overview
 
-Meeting BaaS Analytics is a powerful dashboard that provides detailed insights into your meeting bot performance. The platform offers:
+Meeting BaaS Status is a public-facing status page that provides real-time insights into the performance of all meeting bots across the platform. This project is a fork of the Meeting BaaS Analytics dashboard, modified to provide a public view of all bots rather than just user-specific analytics. The platform offers:
 
-- **Real-time Performance Monitoring**: Track bot success rates, error rates, and performance metrics across Zoom, Google Meet, and Microsoft Teams
-- **Advanced Analytics**: Detailed analysis of meeting durations, error distributions, and platform-specific metrics
+- **Public Status Monitoring**: Track the status of all meeting bots across Zoom, Google Meet, and Microsoft Teams
+- **Real-time Performance Tracking**: Monitor bot success rates, error rates, and performance metrics
 - **Interactive Visualizations**: Beautiful and responsive charts for data visualization
 - **Customizable Filters**: Filter data by date range, platform, error type, and more
 - **Error Analysis**: Comprehensive insights into error patterns and trends
-- **Duration Analytics**: Comprehensive analysis of meeting durations and patterns
+- **Duration Analytics**: Analysis of meeting durations and patterns
+- **Issue Reports**: Track and monitor reported issues across all bots
+
+## Relationship with Meeting BaaS Analytics
+
+This project is a fork of the Meeting BaaS Analytics dashboard, with the following key differences:
+
+- **Public Access**: Unlike the analytics dashboard which shows user-specific data, this status page displays information for all bots
+- **Simplified Interface**: Focused on public-facing status information rather than detailed analytics
 
 ## Tech Stack
 
@@ -37,8 +45,8 @@ Meeting BaaS Analytics is a powerful dashboard that provides detailed insights i
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Meeting-Baas/analytics meeting-baas-analytics
-   cd meeting-baas-analytics
+   git clone https://github.com/Meeting-Baas/status
+   cd status
    ```
 
 2. Install dependencies:
@@ -67,7 +75,7 @@ The application will be available at `http://localhost:3000`
 
 ### Authentication Integration
 
-This project is pre-configured to integrate with the authentication app. Ensure the authentication service is running and properly configured. Update the `.env` file with the required environment variables for authentication.
+This project is pre-configured to integrate with the authentication app. While the app itself doesn't need authentication, certain UI features like header makes use of authentication services. Ensure the authentication service is running and properly configured. Update the `.env` file with the required environment variables for authentication.
 
 ## Design System Documentation
 
@@ -138,7 +146,7 @@ useEffect(() => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const apiData = await apiFunction(USER_TOKEN);
+      const apiData = await apiFunction();
       setData(apiData);
     } catch (error) {
       console.error("Error:", error);
@@ -166,18 +174,18 @@ toast.error("Failed to complete action");
 
 ### API Integration
 
-The analytics API provides comprehensive data for visualization:
+The status API provides comprehensive data for public status visualization:
 
 ```tsx
-// Example API function in your analytics-api.ts
-export async function getAnalyticsData(
-  userToken: string
-): Promise<AnalyticsData> {
+// Example API function in your status-api.ts
+export async function getBotStats(
+  params: BotStatsParams
+): Promise<BotStatsData> {
   try {
     return await axios({
       method: "GET",
-      url: `/api/analytics/data`,
-      headers: { Authorization: userToken },
+      url: `/api/bot-stats`,
+      params,
     }).data;
   } catch (error) {
     console.error("[API] Error:", error);
