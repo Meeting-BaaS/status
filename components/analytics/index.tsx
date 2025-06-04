@@ -16,8 +16,6 @@ import { MainTabs } from "@/components/ui/main-tabs"
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import { SelectedErrorProvider } from "@/contexts/selected-error-context"
-import { SelectedBotsProvider } from "@/contexts/selected-bots-context"
-import { SelectedBotsButton } from "@/components/analytics/selected-bots-button"
 
 const Loading = () => (
   <div className="flex h-96 items-center justify-center">
@@ -135,9 +133,9 @@ export function Analytics() {
       ) : (
         <div className="flex flex-col gap-4">
           <div>
-            <h1 className="font-bold text-3xl">Meeting Bot Analytics</h1>
+            <h1 className="font-bold text-3xl">Meeting BaaS Status</h1>
             <p className="text-muted-foreground">
-              Monitor your meeting bot performance across all platforms
+              Track the status of all meeting bots (not just the ones yours) in one place.
             </p>
           </div>
           <Filters
@@ -171,17 +169,9 @@ export function Analytics() {
                 initialErrorDistribution={data.errorDistributionData}
                 allBots={data.allBots}
               >
-                <SelectedBotsProvider>
-                  <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
-                    {renderTabContent}
-                  </div>
-                  <SelectedBotsButton
-                    dateRange={{
-                      startDate: dateRange?.startDate ?? null,
-                      endDate: dateRange?.endDate ?? null
-                    }}
-                  />
-                </SelectedBotsProvider>
+                <div className={cn("space-y-4", isRefetching && "animate-pulse")}>
+                  {renderTabContent}
+                </div>
               </SelectedErrorProvider>
             </>
           )}

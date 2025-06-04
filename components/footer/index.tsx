@@ -11,7 +11,7 @@ export default function Footer() {
     <footer className="border-t py-4 text-secondary-foreground">
       <div className="mx-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:mx-8">
         <div>
-          <p className="font-semibold text-sm">Analytics</p>
+          <p className="font-semibold text-sm">Status</p>
           <p className="text-xs">
             Built by{" "}
             <Button variant="link" className="h-auto p-0 font-semibold" asChild>

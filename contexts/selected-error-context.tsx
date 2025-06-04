@@ -1,11 +1,11 @@
 "use client"
 
 import { createContext, useState, useEffect, type ReactNode, useCallback, useMemo } from "react"
-import type { ErrorDistribution, FormattedBotData } from "@/lib/types"
+import type { ErrorDistribution, BotData } from "@/lib/types"
 import { useSession } from "@/hooks/use-session"
 import { isMeetingBaasUser } from "@/lib/utils"
 
-export const SELECTED_ERROR_STORAGE_KEY = "analytics-selected-errors"
+export const SELECTED_ERROR_STORAGE_KEY = "status-selected-errors"
 
 // Non-critical errors that should be excluded from default selection
 const NON_CRITICAL_ERRORS = [
@@ -29,7 +29,7 @@ interface SelectedErrorContextType {
   selectAll: (values: string[]) => void
   selectNone: () => void
   selectDefault: () => void
-  filteredBots: FormattedBotData[]
+  filteredBots: BotData[]
   botsFilteredByError: boolean
   defaultErrorValues: string[]
 }
@@ -39,7 +39,7 @@ export const SelectedErrorContext = createContext<SelectedErrorContextType | und
 interface SelectedErrorProviderProps {
   children: ReactNode
   initialErrorDistribution: ErrorDistribution[]
-  allBots: FormattedBotData[]
+  allBots: BotData[]
 }
 
 export function SelectedErrorProvider({
@@ -80,7 +80,7 @@ export function SelectedErrorProvider({
     }
   })
 
-  const [filteredBots, setFilteredBots] = useState<FormattedBotData[]>(allBots)
+  const [filteredBots, setFilteredBots] = useState<BotData[]>(allBots)
 
   const getFilteredBots = useCallback(
     (errorValues: string[]) => {

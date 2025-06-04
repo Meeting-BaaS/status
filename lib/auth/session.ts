@@ -26,7 +26,7 @@ export async function getAuthSession(cookies?: string): Promise<Session | null> 
     const rawSession = await response.json()
 
     if (!rawSession?.session) {
-      throw new Error("Session not found")
+      return null
     }
 
     return {

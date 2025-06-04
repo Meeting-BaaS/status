@@ -6,9 +6,12 @@ import Link from "next/link"
 import { GitHubLogo } from "@/components/icons/github"
 import type { User } from "@/lib/auth/types"
 import { GITHUB_REPO_URL } from "@/lib/external-urls"
-import { getAuthAppUrl } from "@/lib/auth/auth-app-url"
+import { getAuthAppUrl, getSignInUrl } from "@/lib/auth/auth-app-url"
 
-export default function Header({ user }: { user: User }) {
+export default function Header({ user }: { user?: User }) {
+  const onSignIn = () => {
+    window.location.href = getSignInUrl()
+  }
   return (
     <header className="sticky top-0 z-40 mx-auto box-content w-full max-w-container border-b bg-background/15 backdrop-blur-md lg:top-2 lg:mt-2 lg:w-[calc(100%-4rem)] lg:rounded-2xl lg:border">
       <nav className="flex h-12 w-full flex-row items-center justify-between px-4">
@@ -40,7 +43,13 @@ export default function Header({ user }: { user: User }) {
             </Button>
             <ThemeToggle className="hidden md:flex" />
           </div>
-          <UserAvatar user={user} />
+          {user ? (
+            <UserAvatar user={user} />
+          ) : (
+            <Button size="sm" className="h-7 text-xs" onClick={onSignIn}>
+              Sign in
+            </Button>
+          )}
         </div>
       </nav>
     </header>

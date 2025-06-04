@@ -1,9 +1,4 @@
-import type {
-  BotPaginated,
-  DailyTokenConsumption,
-  SubscriptionResponse,
-  UserTokensResponse
-} from "@/lib/types"
+import type { BotData } from "@/lib/types"
 
 export interface FetchLogsParams {
   offset: number
@@ -21,9 +16,9 @@ export interface FetchLogsParams {
 
 /**
  * Fetches paginated bot stats from the API.
- * Returns { bots: BotData[], has_more: boolean }
+ * Returns BotData[]
  */
-export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginated> {
+export async function fetchPublicBotStats(params: FetchLogsParams): Promise<BotData[]> {
   const queryParams = new URLSearchParams()
 
   queryParams.append("offset", String(params.offset))
@@ -45,54 +40,11 @@ export async function fetchBotStats(params: FetchLogsParams): Promise<BotPaginat
   if (params.user_reported_status)
     queryParams.append("user_reported_status", params.user_reported_status)
 
-  const response = await fetch(`/api/baas/bots/all?${queryParams.toString()}`)
+  const response = await fetch(`/api/baas/bots/public_analytics?${queryParams.toString()}`)
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`)
+    throw new Error(`Failed to fetch status: ${response.status} ${response.statusText}`)
   }
-  return response.json()
-}
 
-export interface FetchConsumptionParams {
-  start_date: string
-  end_date: string
-}
-
-/**
- * Fetches token consumption data for a specific date range.
- * @param startDate Start date in ISO format
- * @param endDate End date in ISO format
- * @returns Array of daily token consumption data
- */
-export async function fetchTokenConsumption(
-  params: FetchConsumptionParams
-): Promise<DailyTokenConsumption[]> {
-  const queryParams = new URLSearchParams()
-  queryParams.append("start_date", params.start_date)
-  queryParams.append("end_date", params.end_date)
-
-  const response = await fetch(`/api/baas/bots/token_consumption?${queryParams.toString()}`)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch token consumption: ${response.status} ${response.statusText}`)
-  }
-  return response.json()
-}
-
-/**
- * Fetches current user token information.
- * @returns User tokens data including available tokens and purchase history
- */
-export async function fetchUserTokens(): Promise<UserTokensResponse> {
-  const response = await fetch("/api/baas/accounts/user_tokens")
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user tokens: ${response.status} ${response.statusText}`)
-  }
-  return response.json()
-}
-
-export async function fetchSubscriptionsInfo(): Promise<SubscriptionResponse> {
-  const response = await fetch("/api/baas/payment/subscriptions_infos")
-  if (!response.ok) {
-    throw new Error(`Failed to fetch subscription info: ${response.status} ${response.statusText}`)
-  }
   return response.json()
 }

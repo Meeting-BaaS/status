@@ -9,7 +9,6 @@ import type { FilterState } from "@/lib/types"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import type { DateValueType } from "react-tailwindcss-datepicker/dist/types"
-import { LOGS_URL } from "@/lib/external-urls"
 
 // Initialize dayjs UTC plugin
 dayjs.extend(utc)
@@ -198,31 +197,4 @@ export function updateSearchParams(
   }
 
   return params
-}
-
-export function createLogsSearchParams(
-  startDate: Date | null,
-  endDate: Date | null,
-  windowId?: string,
-  fromAnalytics?: boolean
-): URLSearchParams {
-  const searchParams = new URLSearchParams()
-
-  if (startDate) {
-    searchParams.set("startDate", dateToUtcString(startDate) || "")
-  }
-  if (endDate) {
-    searchParams.set("endDate", dateToUtcString(endDate) || "")
-  }
-  if (windowId) {
-    searchParams.set("windowId", windowId)
-  }
-  if (fromAnalytics) {
-    searchParams.set("from_analytics", "true")
-  }
-  return searchParams
-}
-
-export function createLogsUrl(path: string, searchParams: URLSearchParams): string {
-  return `${LOGS_URL}${path}?${searchParams.toString()}`
 }

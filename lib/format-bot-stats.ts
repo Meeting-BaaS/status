@@ -2,7 +2,6 @@ import type {
   ErrorDistribution,
   ErrorTableEntry,
   ErrorPriority,
-  FormattedBotData,
   NormalizedErrorGroup,
   PlatformDistribution,
   PlatformName,
@@ -11,7 +10,8 @@ import type {
   DurationTimelineEntry,
   PlatformDurationEntry,
   DurationDistributionEntry,
-  IssueReportData
+  IssueReportData,
+  BotData
 } from "@/lib/types"
 import { map, groupBy, sumBy } from "lodash-es"
 import { allErrorCategories } from "@/lib/filter-options"
@@ -29,13 +29,6 @@ import dayjs from "dayjs"
 
 type Dictionary<T> = { [key: string]: T }
 
-export const getPlatformFromUrl = (url: string): PlatformName => {
-  if (url.includes("zoom.us")) return "zoom"
-  if (url.includes("teams.microsoft.com") || url.includes("teams.live.com")) return "teams"
-  if (url.includes("meet.google.com")) return "google meet"
-  return "unknown"
-}
-
 const platformOrder: Record<PlatformName, number> = {
   "google meet": 0,
   teams: 1,
@@ -49,10 +42,10 @@ const platformOrder: Record<PlatformName, number> = {
  * @returns The error distribution and error bots
  */
 export const filterAndGroupErrorBots = (
-  formattedBots: FormattedBotData[]
-): { errorDistribution: Dictionary<FormattedBotData[]>; errorBots: FormattedBotData[] } => {
+  bots: BotData[]
+): { errorDistribution: Dictionary<BotData[]>; errorBots: BotData[] } => {
   // Get bots with errors and warnings
-  const errorBots = formattedBots.filter((bot) => ["error", "warning"].includes(bot.status.type))
+  const errorBots = bots.filter((bot) => ["error", "warning"].includes(bot.status.type))
 
   // Group bots by status value
   const errorDistribution = groupBy(errorBots, "status.value")
@@ -64,11 +57,9 @@ export const filterAndGroupErrorBots = (
  * @param formattedBots - The formatted bots
  * @returns The platform distribution of bots
  */
-export const getPlatformDistribution = (
-  formattedBots: FormattedBotData[]
-): PlatformDistribution[] => {
+export const getPlatformDistribution = (bots: BotData[]): PlatformDistribution[] => {
   // Group bots by platform
-  const distribution = groupBy(formattedBots, "platform")
+  const distribution = groupBy(bots, "meeting_platform")
 
   const platformDistribution: PlatformDistribution[] = Object.entries(distribution).map(
     ([key, bots]) => {
@@ -80,7 +71,7 @@ export const getPlatformDistribution = (
       return {
         platform: key as PlatformName,
         count: bots.length,
-        percentage: (bots.length / formattedBots.length) * 100,
+        percentage: (bots.length / bots.length) * 100,
         statusDistribution: {
           success: {
             count: successCount,
@@ -117,8 +108,8 @@ export const getPlatformDistribution = (
  * @returns The error distribution of bots
  */
 export const getErrorDistribution = (
-  errorDistribution: Dictionary<FormattedBotData[]>,
-  errorBots: FormattedBotData[]
+  errorDistribution: Dictionary<BotData[]>,
+  errorBots: BotData[]
 ): ErrorDistribution[] => {
   // Map the error distribution to an array of objects with name, value, and percentage
   const errorDistributionData = map(errorDistribution, (bots, value) => ({
@@ -134,7 +125,7 @@ export const getErrorDistribution = (
  * @param bots - Array of bots with webhook errors
  * @returns Array of normalized error groups for webhook errors
  */
-function processWebhookErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] {
+function processWebhookErrors(bots: BotData[]): NormalizedErrorGroup[] {
   // Initialize groups with an "other" category for unclassified errors
   const webhookGroups: Record<string, WebhookErrorGroup> = {
     other: { count: 0, messages: [], bots: [] }
@@ -169,9 +160,9 @@ function processWebhookErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] 
  * @param bots - Array of bots with stalled errors
  * @returns Array of normalized error groups for stalled errors
  */
-function processStalledErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] {
+function processStalledErrors(bots: BotData[]): NormalizedErrorGroup[] {
   // Initialize groups for different time ranges
-  const stalledGroups: Record<string, { values: number[]; bots: FormattedBotData[] }> = {
+  const stalledGroups: Record<string, { values: number[]; bots: BotData[] }> = {
     under24h: { values: [], bots: [] },
     under48h: { values: [], bots: [] },
     over48h: { values: [], bots: [] }
@@ -212,9 +203,9 @@ function processStalledErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] 
  * @param bots - Array of bots with unknown errors
  * @returns Array of normalized error groups for unknown errors
  */
-function processUnknownErrors(bots: FormattedBotData[]): NormalizedErrorGroup[] {
+function processUnknownErrors(bots: BotData[]): NormalizedErrorGroup[] {
   // Group bots by their error details
-  const unknownGroups: Record<string, { messages: string[]; bots: FormattedBotData[] }> = {}
+  const unknownGroups: Record<string, { messages: string[]; bots: BotData[] }> = {}
 
   // Group bots by their error details
   for (const bot of bots) {
@@ -256,8 +247,7 @@ function createErrorTableEntry(
       (category === "user_reported_error" ? "User Reported Error" : category), // Formatting for user reported errors
     priority: getPriorityForError(category) as ErrorPriority,
     platforms: getErrorPlatformDistribution(group.bots),
-    count: group.bots.length,
-    botUuids: group.bots.map((bot) => bot.uuid)
+    count: group.bots.length
   }
 }
 
@@ -266,13 +256,11 @@ function createErrorTableEntry(
  * @param errorDistribution - Dictionary of bots grouped by error type
  * @returns Array of formatted error table entries
  */
-export function getErrorTable(
-  errorDistribution: Dictionary<FormattedBotData[]>
-): ErrorTableEntry[] {
+export function getErrorTable(errorDistribution: Dictionary<BotData[]>): ErrorTableEntry[] {
   return Object.entries(errorDistribution).flatMap(([value, bots]) => {
     const { status } = bots[0]
     const category = status.category || "unknown_error"
-    const details = status.details || `${category} error`
+    const details = status.details || status.value
 
     // Process based on error category
     let normalizedGroups: NormalizedErrorGroup[]
@@ -297,7 +285,7 @@ export function getErrorTable(
 /**
  * Transform bot data into timeline entries showing error counts by priority
  */
-export function getTimelineData(bots: FormattedBotData[]): TimelineEntry[] {
+export function getTimelineData(bots: BotData[]): TimelineEntry[] {
   // Get all unique dates and priorities
   const allDates = getUniqueDates(bots)
   const allPriorities = getUniquePriorities(bots)
@@ -347,7 +335,7 @@ export function getTimelineData(bots: FormattedBotData[]): TimelineEntry[] {
 /**
  * Transform bot data into duration timeline entries
  */
-export function getDurationTimelineData(bots: FormattedBotData[]): DurationTimelineEntry[] {
+export function getDurationTimelineData(bots: BotData[]): DurationTimelineEntry[] {
   // Group bots by date
   const botsByDate = groupBy(bots, (bot) => dayjs(bot.created_at).format("YYYY-MM-DD"))
 
@@ -374,9 +362,9 @@ export function getDurationTimelineData(bots: FormattedBotData[]): DurationTimel
 /**
  * Transform bot data into platform duration entries
  */
-export function getPlatformDurationData(bots: FormattedBotData[]): PlatformDurationEntry[] {
+export function getPlatformDurationData(bots: BotData[]): PlatformDurationEntry[] {
   const botsWithDuration = getBotsWithDuration(bots)
-  const platformGroups = groupBy(botsWithDuration, "platform")
+  const platformGroups = groupBy(botsWithDuration, "meeting_platform")
 
   return Object.entries(platformGroups).map(([platform, platformBots]) => {
     const totalDuration = sumBy(platformBots, "duration")
@@ -393,7 +381,7 @@ export function getPlatformDurationData(bots: FormattedBotData[]): PlatformDurat
 /**
  * Transform bot data into duration distribution entries
  */
-export function getDurationDistributionData(bots: FormattedBotData[]): DurationDistributionEntry[] {
+export function getDurationDistributionData(bots: BotData[]): DurationDistributionEntry[] {
   const botsWithDuration = getBotsWithDuration(bots)
   const ranges = [
     { min: 0, max: 15 * 60, label: "0-15m" },
@@ -419,11 +407,9 @@ export function getDurationDistributionData(bots: FormattedBotData[]): DurationD
 /**
  * Transform bot data into issue report data
  */
-export function getIssueReportData(bots: FormattedBotData[]): IssueReportData {
+export function getIssueReportData(bots: BotData[]): IssueReportData {
   // Get all bots with user reported errors
-  const botsWithUserReports = bots.filter(
-    (bot) => bot.user_reported_error && typeof bot.user_reported_error === "object"
-  )
+  const botsWithUserReports = bots.filter((bot) => bot.user_reported_error_status !== null)
 
   // Count by status
   const statusCounts = {
@@ -433,8 +419,7 @@ export function getIssueReportData(bots: FormattedBotData[]): IssueReportData {
   }
 
   for (const bot of botsWithUserReports) {
-    const report = bot.user_reported_error
-    const status = report.status?.toLowerCase() || "open"
+    const status = bot.user_reported_error_status?.toLowerCase() || "open"
     if (status in statusCounts) {
       statusCounts[status as keyof typeof statusCounts]++
     }
@@ -452,8 +437,7 @@ export function getIssueReportData(bots: FormattedBotData[]): IssueReportData {
       }
 
       for (const bot of bots) {
-        const report = bot.user_reported_error
-        const status = report.status?.toLowerCase() || "open"
+        const status = bot.user_reported_error_status?.toLowerCase() || "open"
         if (status in counts) {
           counts[status as keyof typeof counts]++
         }
@@ -477,12 +461,8 @@ export function getIssueReportData(bots: FormattedBotData[]): IssueReportData {
  * @param bot - The bot object
  * @returns The bot object, with an updated status if it has an open user reported error
  */
-export function applyUserReportedErrorStatus(bot: FormattedBotData): FormattedBotData {
-  if (
-    bot.user_reported_error &&
-    typeof bot.user_reported_error === "object" &&
-    bot.user_reported_error.status === "open"
-  ) {
+export function applyUserReportedErrorStatus(bot: BotData): BotData {
+  if (bot.user_reported_error_status === "open") {
     return {
       ...bot,
       status: {
