@@ -19,10 +19,9 @@ import dayjs from "dayjs"
 import { scaleOrdinal } from "d3-scale"
 import { schemePaired } from "d3-scale-chromatic"
 import type { DurationTimelineEntry } from "@/lib/types"
-
-interface DurationTimelineCardProps {
-  durationTimelineData: DurationTimelineEntry[]
-}
+import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
+import { getDurationTimelineData } from "@/lib/format-bot-stats"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 
 function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload, label } = props
@@ -52,7 +51,13 @@ function DurationTimelineTooltip(props: RechartsTooltipProps<number, string>) {
   )
 }
 
-export function DurationTimelineCard({ durationTimelineData }: DurationTimelineCardProps) {
+export function DurationTimelineCard() {
+  const { filteredBots } = useSelectedErrorContext()
+
+  const filteredData: DurationTimelineEntry[] = useMemo(() => {
+    return getDurationTimelineData(filteredBots)
+  }, [filteredBots])
+
   // Create color scale for the lines
   const colorScale = useMemo(() => {
     return scaleOrdinal().domain(["averageDuration", "botCount"]).range(schemePaired)
@@ -72,14 +77,17 @@ export function DurationTimelineCard({ durationTimelineData }: DurationTimelineC
   return (
     <Card className="dark:bg-baas-black">
       <CardHeader>
-        <CardTitle>Duration Timeline</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Duration Timeline
+          <SelectedErrorBadge />
+        </CardTitle>
         <CardDescription>Average duration over time</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-80">
           <ChartContainer config={chartConfig} className="h-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={durationTimelineData}>
+              <LineChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis
                   dataKey="date"

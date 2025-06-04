@@ -108,16 +108,9 @@ export function Analytics() {
           />
         )
       case "error-analysis":
-        return <ErrorAnalysis timelineData={data.timelineData} />
+        return <ErrorAnalysis errorDistributionData={data.errorDistributionData} />
       case "duration":
-        return (
-          <Duration
-            durationTimelineData={data.durationTimelineData}
-            platformDurationData={data.platformDurationData}
-            durationDistributionData={data.durationDistributionData}
-            averageDuration={data.averageDuration}
-          />
-        )
+        return <Duration errorDistributionData={data.errorDistributionData} />
       case "issue-reports":
         return (
           <IssueReports
@@ -158,6 +151,7 @@ export function Analytics() {
             isRefetching={isRefetching}
             firstBotDate={data?.dateRange?.firstBotDate}
             lastBotDate={data?.dateRange?.lastBotDate}
+            totalBots={data?.totalBots}
           />
           {!data || data.allBots.length === 0 ? (
             <div className="flex h-96 items-center justify-center">

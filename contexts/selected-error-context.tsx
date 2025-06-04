@@ -2,18 +2,23 @@
 
 import { createContext, useState, useEffect, type ReactNode, useCallback, useMemo } from "react"
 import type { ErrorDistribution, FormattedBotData } from "@/lib/types"
+import { useSession } from "@/hooks/use-session"
+import { isMeetingBaasUser } from "@/lib/utils"
 
 export const SELECTED_ERROR_STORAGE_KEY = "analytics-selected-errors"
 
 // Non-critical errors that should be excluded from default selection
 const NON_CRITICAL_ERRORS = [
   "Bot Not Accepted",
-  "Insufficient Tokens",
   "Invalid Meeting URL",
   "Meeting Already Started",
   "Meeting Start Timeout",
-  "Webhook Error"
+  "Meeting Ended Before Bot Participation",
+  "Webhook Error",
+  "ZoomRecording Rights Issue"
 ]
+
+const MEETING_BAAS_NON_CRITICAL_ERRORS = ["Insufficient Tokens"]
 
 interface SelectedErrorContextType {
   selectedErrorValues: string[]
@@ -41,16 +46,22 @@ export function SelectedErrorProvider({
   initialErrorDistribution,
   allBots
 }: SelectedErrorProviderProps) {
+  const session = useSession()
+  const meetingBaasUser = isMeetingBaasUser(session?.user.email)
+
   const allErrorValues = useMemo(
     () => initialErrorDistribution.map((item) => item.name),
     [initialErrorDistribution]
   )
 
   // Get default error values (excluding non-critical errors)
-  const defaultErrorValues = useMemo(
-    () => allErrorValues.filter((value) => !NON_CRITICAL_ERRORS.includes(value)),
-    [allErrorValues]
-  )
+  // Meeting BaaS users would also have other non-critical errors filtered out by default
+  const defaultErrorValues = useMemo(() => {
+    const nonCriticalErrors = meetingBaasUser
+      ? [...NON_CRITICAL_ERRORS, ...MEETING_BAAS_NON_CRITICAL_ERRORS]
+      : NON_CRITICAL_ERRORS
+    return allErrorValues.filter((value) => !nonCriticalErrors.includes(value))
+  }, [allErrorValues, meetingBaasUser])
 
   // Initialize from localStorage if available, otherwise use defaultErrorValues
   const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(() => {

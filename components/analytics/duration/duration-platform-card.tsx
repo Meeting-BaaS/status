@@ -15,10 +15,9 @@ import {
 import { AnimatedNumber } from "@/components/ui/animated-number"
 import { motion, AnimatePresence } from "motion/react"
 import type { PlatformDurationEntry } from "@/lib/types"
-
-interface DurationPlatformCardProps {
-  platformDurationData: PlatformDurationEntry[]
-}
+import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
+import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
+import { getPlatformDurationData } from "@/lib/format-bot-stats"
 
 function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
   const { active, payload } = props
@@ -42,20 +41,23 @@ function DurationPlatformTooltip(props: RechartsTooltipProps<number, string>) {
   )
 }
 
-export function DurationPlatformCard({ platformDurationData }: DurationPlatformCardProps) {
+export function DurationPlatformCard() {
+  const { filteredBots } = useSelectedErrorContext()
+
+  const filteredData: PlatformDurationEntry[] = useMemo(() => {
+    return getPlatformDurationData(filteredBots)
+  }, [filteredBots])
+
   // Calculate total average duration
   const totalAverageDuration = useMemo(() => {
-    const totalDuration = platformDurationData.reduce(
-      (sum, item) => sum + item.value * item.count,
-      0
-    )
-    const totalBots = platformDurationData.reduce((sum, item) => sum + item.count, 0)
+    const totalDuration = filteredData.reduce((sum, item) => sum + item.value * item.count, 0)
+    const totalBots = filteredData.reduce((sum, item) => sum + item.count, 0)
     return totalBots > 0 ? totalDuration / totalBots : 0
-  }, [platformDurationData])
+  }, [filteredData])
 
   // Chart configuration
   const chartConfig = useMemo(() => {
-    return platformDurationData.reduce(
+    return filteredData.reduce(
       (acc, item) => {
         acc[item.name] = {
           label: item.name,
@@ -65,12 +67,15 @@ export function DurationPlatformCard({ platformDurationData }: DurationPlatformC
       },
       {} as Record<string, { label: string; color: string }>
     )
-  }, [platformDurationData])
+  }, [filteredData])
 
   return (
     <Card className="dark:bg-baas-black">
       <CardHeader>
-        <CardTitle>Platform Duration</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Platform Duration
+          <SelectedErrorBadge />
+        </CardTitle>
         <CardDescription>Average duration by platform</CardDescription>
       </CardHeader>
       <CardContent>
@@ -79,7 +84,7 @@ export function DurationPlatformCard({ platformDurationData }: DurationPlatformC
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={platformDurationData}
+                  data={filteredData}
                   cx="50%"
                   cy="50%"
                   innerRadius={90}
@@ -90,7 +95,7 @@ export function DurationPlatformCard({ platformDurationData }: DurationPlatformC
                   strokeWidth={0}
                   animationDuration={800}
                 >
-                  {platformDurationData.map((entry) => (
+                  {filteredData.map((entry) => (
                     <Cell
                       key={entry.name}
                       fill={

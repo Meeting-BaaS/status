@@ -17,13 +17,10 @@ import {
   YAxis
 } from "recharts"
 import { AnimatedNumber } from "@/components/ui/animated-number"
+import type { PlatformDistribution } from "@/lib/types"
 
 interface PlatformDistributionCardProps {
-  platformDistribution: Array<{
-    platform: string
-    count: number
-    percentage: number
-  }>
+  platformDistribution: PlatformDistribution[]
   totalBots: number
 }
 

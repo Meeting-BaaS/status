@@ -171,15 +171,6 @@ export function getUniquePriorities(bots: FormattedBotData[]): string[] {
 }
 
 /**
- * Calculate average duration from an array of bots
- */
-export function calculateAverageDuration(bots: FormattedBotData[]): number {
-  const botsWithDuration = bots.filter((bot) => bot.duration && bot.duration > 0)
-  if (botsWithDuration.length === 0) return 0
-  return sumBy(botsWithDuration, "duration") / botsWithDuration.length
-}
-
-/**
  * Get bots with valid duration
  */
 export function getBotsWithDuration(bots: FormattedBotData[]): FormattedBotData[] {

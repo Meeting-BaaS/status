@@ -27,7 +27,7 @@ export default function Overview({
           platformDistribution={platformDistribution}
           totalBots={allBots.length}
         />
-        <PlatformPerformanceCard platformDistribution={platformDistribution} />
+        <PlatformPerformanceCard />
       </div>
       <ErrorDistributionCard
         errorDistributionData={errorDistributionData}

@@ -18,6 +18,7 @@ interface FiltersProps {
   isRefetching: boolean
   firstBotDate?: string
   lastBotDate?: string
+  totalBots?: number
 }
 
 export default function Filters({
@@ -30,7 +31,8 @@ export default function Filters({
   refetch,
   isRefetching,
   firstBotDate,
-  lastBotDate
+  lastBotDate,
+  totalBots
 }: FiltersProps) {
   return (
     <div className="my-4 flex flex-col justify-between gap-4 md:flex-row">
@@ -51,8 +53,8 @@ export default function Filters({
           <DateRangeInfo
             firstBotDate={firstBotDate}
             lastBotDate={lastBotDate}
-            limit={limit}
             isRefetching={isRefetching}
+            totalBots={totalBots}
           />
         )}
       </div>

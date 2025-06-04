@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer } from "@/components/ui/chart"
 import { formatNumber, platformColors } from "@/lib/utils"
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import {
   Cell,
   Pie,
@@ -17,10 +17,6 @@ import { useSelectedErrorContext } from "@/hooks/use-selected-error-context"
 import type { PlatformDistribution } from "@/lib/types"
 import { getPlatformDistribution } from "@/lib/format-bot-stats"
 import { SelectedErrorBadge } from "@/components/analytics/selected-error-badge"
-
-interface PlatformPerformanceCardProps {
-  platformDistribution: PlatformDistribution[]
-}
 
 const otherStatus = "var(--other-status)"
 
@@ -70,13 +66,11 @@ function PlatformPerformanceTooltip(props: RechartsTooltipProps<number, string>)
   )
 }
 
-export function PlatformPerformanceCard({ platformDistribution }: PlatformPerformanceCardProps) {
+export function PlatformPerformanceCard() {
   const { filteredBots } = useSelectedErrorContext()
-  const [filteredDistribution, setFilteredDistribution] = useState(platformDistribution)
 
-  useEffect(() => {
-    const filteredData = getPlatformDistribution(filteredBots)
-    setFilteredDistribution(filteredData)
+  const filteredDistribution: PlatformDistribution[] = useMemo(() => {
+    return getPlatformDistribution(filteredBots)
   }, [filteredBots])
 
   const chartData = useMemo(() => {

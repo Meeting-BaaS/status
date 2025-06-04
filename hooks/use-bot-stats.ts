@@ -7,14 +7,9 @@ import {
   getErrorTable,
   getPlatformDistribution,
   getPlatformFromUrl,
-  getTimelineData,
-  getDurationTimelineData,
-  getPlatformDurationData,
-  getDurationDistributionData,
   getIssueReportData,
   filterAndGroupErrorBots
 } from "@/lib/format-bot-stats"
-import { calculateAverageDuration } from "@/lib/utils"
 
 interface UseBotStatsParams {
   offset: number
@@ -77,18 +72,6 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
       // Transform data for error table
       const errorTableData = getErrorTable(errorDistribution)
 
-      // Transform data for error timeline
-      const timelineData = getTimelineData(formattedBots)
-
-      // Transform data for average duration timeline
-      const durationTimelineData = getDurationTimelineData(formattedBots)
-
-      // Duration distribution by platform
-      const platformDurationData = getPlatformDurationData(formattedBots)
-
-      // Duration distribution by duration buckets (15m, 30m, 45m, 60m, 60m+)
-      const durationDistributionData = getDurationDistributionData(formattedBots)
-
       // Issue reports
       const issueReportData = getIssueReportData(formattedBots)
 
@@ -99,12 +82,8 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         platformDistribution,
         errorDistributionData,
         errorTableData,
-        timelineData,
-        durationTimelineData,
-        platformDurationData,
-        durationDistributionData,
         issueReportData,
-        averageDuration: calculateAverageDuration(formattedBots),
+        totalBots: formattedBots.length,
         dateRange: firstBotDate && lastBotDate ? { firstBotDate, lastBotDate } : null
       }
     },

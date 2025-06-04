@@ -7,22 +7,23 @@ dayjs.extend(utc)
 interface DateRangeInfoProps {
   firstBotDate: string
   lastBotDate: string
-  limit: number
   isRefetching: boolean
+  totalBots?: number
 }
 
 export function DateRangeInfo({
   firstBotDate,
   lastBotDate,
-  limit,
-  isRefetching
+  isRefetching,
+  totalBots
 }: DateRangeInfoProps) {
   if (isRefetching) {
     return <Skeleton className="h-5 w-full max-w-96" />
   }
   return (
     <div className="text-muted-foreground text-sm">
-      Results from {limit} bots between {dayjs(lastBotDate).utc().local().format("D MMM YYYY")} to{" "}
+      Results from {totalBots ?? 0} bots between{" "}
+      {dayjs(lastBotDate).utc().local().format("D MMM YYYY")} to{" "}
       {dayjs(firstBotDate).utc().local().format("D MMM YYYY")}
     </div>
   )
