@@ -135,7 +135,7 @@ export function Analytics() {
           <div>
             <h1 className="font-bold text-3xl">Meeting BaaS Status</h1>
             <p className="text-muted-foreground">
-              Track the status of all meeting bots (not just the ones yours) in one place.
+              Real-time insights into the performance of all meeting bots across the platform.
             </p>
           </div>
           <Filters
