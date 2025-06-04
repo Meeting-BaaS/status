@@ -8,7 +8,8 @@ import {
   getPlatformDistribution,
   getPlatformFromUrl,
   getIssueReportData,
-  filterAndGroupErrorBots
+  filterAndGroupErrorBots,
+  applyUserReportedErrorStatus
 } from "@/lib/format-bot-stats"
 
 interface UseBotStatsParams {
@@ -53,10 +54,10 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
       return fetchBotStats(queryParams)
     },
     select: (data) => {
-      const formattedBots: FormattedBotData[] = data.bots.map((bot) => ({
-        ...bot,
-        platform: getPlatformFromUrl(bot.meeting_url)
-      }))
+      const formattedBots: FormattedBotData[] = data.bots.map((bot) => {
+        const botWithPlatform = { ...bot, platform: getPlatformFromUrl(bot.meeting_url) }
+        return applyUserReportedErrorStatus(botWithPlatform) as FormattedBotData
+      })
       const { errorDistribution, errorBots } = filterAndGroupErrorBots(formattedBots)
 
       // Get the date range from the first and last bot

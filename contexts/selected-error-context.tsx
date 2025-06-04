@@ -31,6 +31,7 @@ interface SelectedErrorContextType {
   selectDefault: () => void
   filteredBots: FormattedBotData[]
   botsFilteredByError: boolean
+  defaultErrorValues: string[]
 }
 
 export const SelectedErrorContext = createContext<SelectedErrorContextType | undefined>(undefined)
@@ -187,7 +188,8 @@ export function SelectedErrorProvider({
         selectNone,
         selectDefault,
         filteredBots,
-        botsFilteredByError
+        botsFilteredByError,
+        defaultErrorValues
       }}
     >
       {children}

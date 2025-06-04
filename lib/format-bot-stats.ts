@@ -251,7 +251,9 @@ function createErrorTableEntry(
     type: group.type,
     originalType,
     message: group.message,
-    category: allErrorCategories.find((c) => c.value === category)?.label || category,
+    category:
+      allErrorCategories.find((c) => c.value === category)?.label ||
+      (category === "user_reported_error" ? "User Reported Error" : category), // Formatting for user reported errors
     priority: getPriorityForError(category) as ErrorPriority,
     platforms: getErrorPlatformDistribution(group.bots),
     count: group.bots.length,
@@ -468,4 +470,29 @@ export function getIssueReportData(bots: FormattedBotData[]): IssueReportData {
     statusCounts,
     timelineData
   }
+}
+
+/**
+ * If a bot has a user_reported_error with status 'open', update its status to reflect a user reported error.
+ * @param bot - The bot object
+ * @returns The bot object, with an updated status if it has an open user reported error
+ */
+export function applyUserReportedErrorStatus(bot: FormattedBotData): FormattedBotData {
+  if (
+    bot.user_reported_error &&
+    typeof bot.user_reported_error === "object" &&
+    bot.user_reported_error.status === "open"
+  ) {
+    return {
+      ...bot,
+      status: {
+        value: "User Reported Error",
+        type: "error",
+        details: "Error has been reported by the user",
+        sort_priority: 0,
+        category: "user_reported_error"
+      }
+    }
+  }
+  return bot
 }

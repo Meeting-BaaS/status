@@ -3,7 +3,7 @@ import dayjs from "dayjs"
 import { twMerge } from "tailwind-merge"
 import type { FormattedBotData, PlatformName, SubscriptionPlanType } from "@/lib/types"
 import utc from "dayjs/plugin/utc"
-import { countBy, sumBy } from "lodash-es"
+import { countBy } from "lodash-es"
 dayjs.extend(utc)
 
 /**
@@ -105,6 +105,7 @@ export function getPriorityForError(category?: string): string {
   switch (category) {
     case "system_error":
     case "stalled_error":
+    case "user_reported_error":
       return "critical"
     case "auth_error":
     case "capacity_error":

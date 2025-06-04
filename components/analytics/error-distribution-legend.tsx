@@ -28,7 +28,8 @@ export function ErrorDistributionLegend({
     removeErrorValue,
     selectAll,
     selectNone,
-    selectDefault
+    selectDefault,
+    defaultErrorValues
   } = useSelectedErrorContext()
 
   const defaultColorScale = useMemo(() => {
@@ -49,6 +50,13 @@ export function ErrorDistributionLegend({
 
   // Sort error types alphabetically
   const sortedErrorTypes = [...errorDistributionData].sort((a, b) => a.name.localeCompare(b.name))
+
+  // Check if current selection matches default selection (order-insensitive)
+  const isDefaultSelected = useMemo(() => {
+    if (selectedErrorValues.length !== defaultErrorValues.length) return false
+    const selectedSet = new Set(selectedErrorValues)
+    return defaultErrorValues.every((val) => selectedSet.has(val))
+  }, [selectedErrorValues, defaultErrorValues])
 
   return (
     <div className={cn("flex flex-col-reverse gap-4", variant === "card" && "md:-mt-16 grow")}>
@@ -138,6 +146,7 @@ export function ErrorDistributionLegend({
                   variant="outline"
                   size="icon"
                   onClick={selectDefault}
+                  disabled={isDefaultSelected}
                   aria-label="Reset to Default Selection"
                 >
                   <RotateCcw />
