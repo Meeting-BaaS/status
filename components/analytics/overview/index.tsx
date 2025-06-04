@@ -1,4 +1,4 @@
-import type { FormattedBotData, PlatformDistribution, ErrorDistribution } from "@/lib/types"
+import type { BotData, PlatformDistribution, ErrorDistribution } from "@/lib/types"
 import { ErrorDistributionCard } from "@/components/analytics/overview/error-distribution-card"
 import { ErrorTableCard } from "@/components/analytics/overview/error-table-card"
 import type { ErrorTableEntry } from "@/lib/types"
@@ -7,9 +7,9 @@ import { PlatformPerformanceCard } from "@/components/analytics/overview/platfor
 
 interface OverviewProps {
   platformDistribution: PlatformDistribution[]
-  allBots: FormattedBotData[]
+  allBots: BotData[]
   errorDistributionData: ErrorDistribution[]
-  errorBots: FormattedBotData[]
+  errorBots: BotData[]
   errorTableData: ErrorTableEntry[]
 }
 

@@ -26,6 +26,7 @@ export const SETTINGS_URL = createUrl("settings")
 export const LOGS_URL = createUrl("logs")
 export const CREDENTIALS_URL = `${SETTINGS_URL}/credentials`
 export const BILLING_URL = `${createUrl("pricing")}/billing`
+export const USAGE_URL = `${createUrl("analytics")}/usage`
 
 // Github
-export const GITHUB_REPO_URL = "https://github.com/Meeting-Baas/analytics"
+export const GITHUB_REPO_URL = "https://github.com/Meeting-Baas/status"

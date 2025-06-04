@@ -6,20 +6,16 @@ import Footer from "@/components/footer"
 import { useSession } from "@/hooks/use-session"
 
 interface LayoutRootProps {
-  session: Session
+  session: Session | null
   children: React.ReactNode
 }
 
 export default function LayoutRoot({ children, session: initialSession }: LayoutRootProps) {
   const session = useSession(initialSession)
 
-  if (!session) {
-    return null
-  }
-
   return (
     <>
-      <Header user={session.user} />
+      <Header user={session?.user} />
       <main className="grow">{children}</main>
       <Footer />
     </>

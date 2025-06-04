@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import dayjs from "dayjs"
 import { twMerge } from "tailwind-merge"
-import type { FormattedBotData, PlatformName, SubscriptionPlanType } from "@/lib/types"
+import type { BotData, PlatformName } from "@/lib/types"
 import utc from "dayjs/plugin/utc"
 import { countBy } from "lodash-es"
 dayjs.extend(utc)
@@ -21,29 +21,10 @@ export function formatNumber(value: number): string {
 }
 
 /**
- * Formats a float number with one decimal place (rounded) and thousands separators.
- * Only shows decimal place for non-whole numbers.
- */
-export function formatFloat(value: number): string {
-  const rounded = Number(value.toFixed(1))
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: Number.isInteger(rounded) ? 0 : 1,
-    maximumFractionDigits: 1
-  }).format(rounded)
-}
-
-/**
  * Formats a percentage value with one decimal place
  */
 export function formatPercentage(value: number): string {
   return `${value.toFixed(1)}%`
-}
-
-/**
- * Formats a date in a human-readable format (May 1, 2024)
- */
-export const formatDate = (dateString: string) => {
-  return dayjs.utc(dateString).local().format("D MMM YYYY")
 }
 
 /**
@@ -52,47 +33,6 @@ export const formatDate = (dateString: string) => {
 export const formatDuration = (value: number) => {
   const minutes = Math.round(value / 60)
   return `${formatNumber(minutes)}m`
-}
-
-/**
- * Converts seconds to hours
- */
-export function secondsToHours(seconds: number): number {
-  return Math.round((seconds / 3600) * 100) / 100
-}
-
-export const formatPlanType = (planType: SubscriptionPlanType): string => {
-  const formattedPlanType = planType
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim()
-  return `Current plan: ${formattedPlanType}`
-}
-
-const TOKEN_CRITICAL_THRESHOLD = 5
-const TOKEN_WARNING_THRESHOLD = 8
-
-export const getProgressBarColors = (availableTokens: number) => {
-  if (availableTokens < TOKEN_CRITICAL_THRESHOLD) {
-    return {
-      main: "bg-destructive",
-      bg: "bg-destructive/10",
-      text: "text-destructive"
-    }
-  }
-  if (availableTokens < TOKEN_WARNING_THRESHOLD) {
-    return {
-      main: "bg-amber-500 dark:bg-baas-warning-500",
-      bg: "bg-amber-500/10 dark:bg-baas-warning-500/10",
-      text: "text-amber-500 dark:text-baas-warning-500"
-    }
-  }
-  return {
-    main: "bg-primary",
-    bg: "bg-primary/10",
-    text: "text-primary"
-  }
 }
 
 export function getErrorMessageColor(priority?: string) {
@@ -124,10 +64,8 @@ export function getPriorityForError(category?: string): string {
   }
 }
 
-export function getErrorPlatformDistribution(
-  bots: FormattedBotData[]
-): Record<PlatformName, number> {
-  const platformCounts = countBy(bots, "platform")
+export function getErrorPlatformDistribution(bots: BotData[]): Record<PlatformName, number> {
+  const platformCounts = countBy(bots, "meeting_platform")
   return Object.fromEntries(
     Object.entries(platformCounts).map(([platform, count]) => [platform as PlatformName, count])
   ) as Record<PlatformName, number>
@@ -154,14 +92,14 @@ export function getStalledErrorType(hours: number): string {
 /**
  * Get all unique dates from an array of bots
  */
-export function getUniqueDates(bots: FormattedBotData[]): string[] {
+export function getUniqueDates(bots: BotData[]): string[] {
   return Array.from(new Set(bots.map((bot) => dayjs(bot.created_at).format("YYYY-MM-DD")))).sort()
 }
 
 /**
  * Get all unique priorities from error bots
  */
-export function getUniquePriorities(bots: FormattedBotData[]): string[] {
+export function getUniquePriorities(bots: BotData[]): string[] {
   return Array.from(
     new Set(
       bots
@@ -174,7 +112,7 @@ export function getUniquePriorities(bots: FormattedBotData[]): string[] {
 /**
  * Get bots with valid duration
  */
-export function getBotsWithDuration(bots: FormattedBotData[]): FormattedBotData[] {
+export function getBotsWithDuration(bots: BotData[]): BotData[] {
   return bots.filter((bot) => bot.duration && bot.duration > 0)
 }
 

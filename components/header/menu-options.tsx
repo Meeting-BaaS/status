@@ -3,7 +3,8 @@ import {
   BILLING_URL,
   CREDENTIALS_URL,
   LOGS_URL,
-  SETTINGS_URL
+  SETTINGS_URL,
+  USAGE_URL
 } from "@/lib/external-urls"
 
 export type MenuOption = {
@@ -29,6 +30,10 @@ export const menuOptions: MenuOption[] = [
   {
     title: "Logs",
     href: LOGS_URL
+  },
+  {
+    title: "Consumption",
+    href: USAGE_URL
   },
   {
     title: "Billing",

@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { fetchBotStats } from "@/lib/api"
+import { fetchPublicBotStats } from "@/lib/api"
 import dayjs from "dayjs"
-import type { FilterState, FormattedBotData } from "@/lib/types"
+import type { FilterState, BotData } from "@/lib/types"
 import {
   getErrorDistribution,
   getErrorTable,
   getPlatformDistribution,
-  getPlatformFromUrl,
   getIssueReportData,
   filterAndGroupErrorBots,
   applyUserReportedErrorStatus
@@ -51,13 +50,10 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
         })
       }
 
-      return fetchBotStats(queryParams)
+      return fetchPublicBotStats(queryParams)
     },
     select: (data) => {
-      const formattedBots: FormattedBotData[] = data.bots.map((bot) => {
-        const botWithPlatform = { ...bot, platform: getPlatformFromUrl(bot.meeting_url) }
-        return applyUserReportedErrorStatus(botWithPlatform) as FormattedBotData
-      })
+      const formattedBots: BotData[] = data.map((bot) => applyUserReportedErrorStatus(bot))
       const { errorDistribution, errorBots } = filterAndGroupErrorBots(formattedBots)
 
       // Get the date range from the first and last bot
@@ -77,7 +73,6 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
       const issueReportData = getIssueReportData(formattedBots)
 
       return {
-        has_more: data.has_more,
         allBots: formattedBots,
         errorBots,
         platformDistribution,
