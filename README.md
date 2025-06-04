@@ -28,7 +28,7 @@ This project is a fork of the Meeting BaaS Analytics dashboard, with the followi
 - **Framework**: Next.js 15.3.2
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4
-- **UI Components**: Shadcn
+- **UI Components**: Shadcn (Radix UI)
 - **Charts**: Recharts with D3
 - **Authentication**: Centralised Auth app integration
 - **Package Manager**: pnpm
