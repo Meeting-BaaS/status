@@ -13,6 +13,7 @@ export type ErrorCategory =
   | "duplicate_error"
   | "webhook_error"
   | "api_error"
+  | "user_reported_error"
   | "unknown_error"
   | "stalled_error"
   | "success"

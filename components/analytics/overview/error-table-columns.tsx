@@ -48,7 +48,7 @@ export const errorTableColumns: ColumnDef<ErrorTableEntry>[] = [
     accessorKey: "message",
     header: ({ column }) => <SortableHeader column={column} title="Aggregated Error Message" />,
     cell: ({ row }) => {
-      const { message, priority, category } = row.original
+      const { message, priority } = row.original
       return (
         <span className="whitespace-normal break-words text-sm">
           <span className={getErrorMessageColor(priority)}>{message}</span>
