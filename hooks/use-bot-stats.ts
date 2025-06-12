@@ -1,7 +1,14 @@
 import { useQuery } from "@tanstack/react-query"
 import { fetchPublicBotStats } from "@/lib/api"
 import dayjs from "dayjs"
-import type { FilterState, BotData } from "@/lib/types"
+import type {
+  FilterState,
+  BotData,
+  PlatformDistribution,
+  ErrorDistribution,
+  IssueReportData,
+  ErrorTableEntry
+} from "@/lib/types"
 import {
   getErrorDistribution,
   getErrorTable,
@@ -19,8 +26,19 @@ interface UseBotStatsParams {
   filters: FilterState
 }
 
+interface BotStatsData {
+  allBots: BotData[]
+  errorBots: BotData[]
+  platformDistribution: PlatformDistribution[]
+  errorDistributionData: ErrorDistribution[]
+  errorTableData: ErrorTableEntry[]
+  issueReportData: IssueReportData
+  totalBots: number
+  dateRange: { firstBotDate: string; lastBotDate: string } | null
+}
+
 export function useBotStats({ offset, limit, startDate, endDate, filters }: UseBotStatsParams) {
-  const { data, isLoading, isError, error, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isRefetching, refetch } = useQuery<BotData[], Error, BotStatsData>({
     queryKey: ["bot-stats", { offset, limit, startDate, endDate, filters }],
     queryFn: () => {
       const {
@@ -85,14 +103,13 @@ export function useBotStats({ offset, limit, startDate, endDate, filters }: UseB
     },
     staleTime: 1000 * 60 * 15, // 15 minutes for analytics data
     refetchOnMount: true,
-    placeholderData: (previousData) => previousData
+    placeholderData: (previousData) => previousData,
+    throwOnError: true // Caught by the error boundary
   })
 
   return {
     data,
     isLoading,
-    isError,
-    error,
     isRefetching,
     refetch
   }
