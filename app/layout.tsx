@@ -17,26 +17,31 @@ export const metadata: Metadata = {
   title: "Status | Meeting BaaS",
   description: "Track Meeting BaaS bots status across Zoom, Google Meet, and Microsoft Teams",
   keywords: [
-    "meeting bot status",
-    "bot monitoring",
-    "error tracking",
     "Meeting BaaS",
-    "Zoom",
+    "meeting bot status",
+    "Bot monitoring",
+    "Error tracking",
+    "Meeting bot",
+    "Analytics",
     "Google Meet",
-    "Microsoft Teams"
+    "Teams",
+    "Zoom"
   ],
-  authors: [{ name: "Meeting BaaS" }],
+  authors: [{ name: "Meeting BaaS Team" }],
   openGraph: {
     type: "website",
     title: "Status | Meeting BaaS",
     description: "Track Meeting BaaS bots status across Zoom, Google Meet, and Microsoft Teams",
     siteName: "Meeting BaaS",
+    url: "https://status.meetingbaas.com",
+    locale: "en_US",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Meeting BaaS Status"
+        alt: "Meeting BaaS Status",
+        type: "image/png"
       }
     ]
   },
@@ -44,16 +49,25 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Status | Meeting BaaS",
     description: "Track Meeting BaaS bots status across Zoom, Google Meet, and Microsoft Teams",
-    images: ["/og-image.png"]
+    images: ["/og-image.png"],
+    creator: "@MeetingBaas",
+    site: "@MeetingBaas"
   },
-  category: "Developer Tools",
+  category: "Video Conferencing Tools",
   applicationName: "Meeting BaaS",
   creator: "Meeting BaaS",
   publisher: "Meeting BaaS",
   referrer: "origin-when-cross-origin",
   robots: {
     index: true,
-    follow: true
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
   }
 }
 
