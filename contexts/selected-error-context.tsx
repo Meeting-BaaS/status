@@ -2,23 +2,10 @@
 
 import { createContext, useState, useEffect, type ReactNode, useCallback, useMemo } from "react"
 import type { ErrorDistribution, BotData } from "@/lib/types"
-import { useSession } from "@/hooks/use-session"
-import { isMeetingBaasUser } from "@/lib/utils"
-
 export const SELECTED_ERROR_STORAGE_KEY = "status-selected-errors"
 
-// Non-critical errors that should be excluded from default selection
-const NON_CRITICAL_ERRORS = [
-  "Bot Not Accepted",
-  "Invalid Meeting URL",
-  "Meeting Already Started",
-  "Meeting Start Timeout",
-  "Meeting Ended Before Bot Participation",
-  "Webhook Error",
-  "ZoomRecording Rights Issue"
-]
-
-const MEETING_BAAS_NON_CRITICAL_ERRORS = ["Insufficient Tokens"]
+// Critical errors that are part of the default selection; all others are non-critical and excluded by default
+const CRITICAL_ERRORS = ["Unknown Error", "Stalled"]
 
 interface SelectedErrorContextType {
   selectedErrorValues: string[]
@@ -47,22 +34,15 @@ export function SelectedErrorProvider({
   initialErrorDistribution,
   allBots
 }: SelectedErrorProviderProps) {
-  const session = useSession()
-  const meetingBaasUser = isMeetingBaasUser(session?.user.email)
-
   const allErrorValues = useMemo(
     () => initialErrorDistribution.map((item) => item.name),
     [initialErrorDistribution]
   )
 
-  // Get default error values (excluding non-critical errors)
-  // Meeting BaaS users would also have other non-critical errors filtered out by default
+  // Default selection: only critical errors (Unknown Error, Stalled); all others are non-critical and excluded
   const defaultErrorValues = useMemo(() => {
-    const nonCriticalErrors = meetingBaasUser
-      ? [...NON_CRITICAL_ERRORS, ...MEETING_BAAS_NON_CRITICAL_ERRORS]
-      : NON_CRITICAL_ERRORS
-    return allErrorValues.filter((value) => !nonCriticalErrors.includes(value))
-  }, [allErrorValues, meetingBaasUser])
+    return allErrorValues.filter((value) => CRITICAL_ERRORS.includes(value))
+  }, [allErrorValues])
 
   // Initialize from localStorage if available, otherwise use defaultErrorValues
   const [selectedErrorValues, setSelectedErrorValues] = useState<string[]>(() => {
