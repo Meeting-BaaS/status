@@ -40,7 +40,7 @@ export async function fetchPublicBotStats(params: FetchLogsParams): Promise<BotD
   if (params.user_reported_status)
     queryParams.append("user_reported_status", params.user_reported_status)
 
-  const response = await fetch(`/api/baas/bots/public_analytics?${queryParams.toString()}`)
+  const response = await fetch(`/api/baas/public/bots/analytics?${queryParams.toString()}`)
 
   if (!response.ok) {
     throw new Error(`Failed to fetch status: ${response.status} ${response.statusText}`)
