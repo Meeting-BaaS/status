@@ -161,14 +161,20 @@ export async function getDependencyHealth(dependency: Dependency): Promise<Depen
     fetchStatuspage<StatuspageComponentsResponse>(dependency.componentsUrl)
   ])
 
-  // If the component list is unavailable, fall back to the provider-wide
-  // indicator rather than showing every capability as unknown.
-  if (!componentsBody) {
+  // Fall back to the provider-wide indicator when the component list is
+  // unavailable or malformed (not an array, or containing null/non-object
+  // entries) rather than showing every capability as unknown — an unexpected
+  // shape must not reject the render.
+  const rawComponents = componentsBody?.components
+  if (
+    !Array.isArray(rawComponents) ||
+    rawComponents.some((component) => component === null || typeof component !== "object")
+  ) {
     return { ...base, status: mapIndicator(statusBody?.status?.indicator), capabilities: [] }
   }
 
   const componentStatuses = new Map<string, DependencyStatus>()
-  for (const component of componentsBody.components ?? []) {
+  for (const component of rawComponents) {
     if (typeof component.name === "string") {
       componentStatuses.set(
         component.name,
