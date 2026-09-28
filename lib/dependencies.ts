@@ -20,7 +20,13 @@ export interface Dependency {
   statusUrl: string
   componentsUrl: string
   note?: string
+  /** Regions we operate in, matched against AZ component names ("fr-par-1" -> "fr-par"). */
+  regions?: string[]
+  /** Unresolved-incidents endpoint, used to tell whether a degraded component is actually our region's problem. */
+  incidentsUrl?: string
   capabilities: DependencyCapability[]
+  /** Our own zone(s) — only surfaced when not operational, since a healthy zone adds nothing. */
+  zone?: DependencyCapability
 }
 
 export interface CapabilityHealth {
@@ -44,16 +50,21 @@ export interface DependencyHealth {
  * (10 nodes, API + bots), so a degraded product we don't use — or another
  * region/AZ — is not our incident.
  *
+ * Relevance is region-gated: providers sometimes mark a product component as
+ * degraded for an incident that only affects another region (e.g. Object
+ * Storage degraded by a pl-waw incident). The unresolved incidents tell us
+ * which regions are affected, and the product only counts against us when our
+ * region is in that set (or the incident is global).
+ *
  * Capabilities only map to the components that back them:
  * - Object Storage -> artifacts, recordings, logs, audio chunks, logos
  *   (s3.fr-par.scw.cloud buckets)
  * - Messaging and Queuing -> bot job queues (sqs.mnq.fr-par.scaleway.com)
  * - Kubernetes Kapsule -> API server and bot hosting
  * - Container Registry -> image pulls for deploys (rg.fr-par.scw.cloud)
- * - fr-par-1 -> the only AZ our nodes run in
  *
- * Providers expose Atlassian Statuspage APIs: /api/v2/status.json and
- * /api/v2/components.json.
+ * Providers expose Atlassian Statuspage APIs: /api/v2/status.json,
+ * /api/v2/components.json and /api/v2/incidents/unresolved.json.
  */
 export const dependencies: Dependency[] = [
   {
@@ -64,13 +75,15 @@ export const dependencies: Dependency[] = [
     pageUrl: "https://status.scaleway.com",
     statusUrl: "https://status.scaleway.com/api/v2/status.json",
     componentsUrl: "https://status.scaleway.com/api/v2/components.json",
+    incidentsUrl: "https://status.scaleway.com/api/v2/incidents/unresolved.json",
+    regions: ["fr-par"],
     capabilities: [
       { label: "Artifacts & recordings", components: ["Object Storage"] },
       { label: "Bot job queue", components: ["Messaging and Queuing"] },
       { label: "Hosting (API & bots)", components: ["Kubernetes Kapsule"] },
-      { label: "Deployments", components: ["Container Registry"] },
-      { label: "Zone fr-par-1", components: ["fr-par-1"] }
-    ]
+      { label: "Deployments", components: ["Container Registry"] }
+    ],
+    zone: { label: "Zone fr-par-1", components: ["fr-par-1"] }
   },
   {
     id: "transcription",
@@ -111,6 +124,9 @@ const SEVERITY: Record<DependencyStatus, number> = {
   major_outage: 5
 }
 
+/** AZ component names look like "fr-par-1" or "pl-waw-2". */
+const AZ_COMPONENT_PATTERN = /^([a-z]{2}-[a-z]{3})-\d+$/
+
 export function mapIndicator(indicator: unknown): DependencyStatus {
   if (typeof indicator !== "string") return "unknown"
   return STATUS_BY_INDICATOR[indicator] ?? "unknown"
@@ -123,12 +139,36 @@ export function worstStatus(statuses: DependencyStatus[]): DependencyStatus {
   )
 }
 
+/** Regions (e.g. "fr-par") mentioned by the AZ components of an incident. */
+export function componentRegions(componentNames: string[]): Set<string> {
+  const regions = new Set<string>()
+  for (const name of componentNames) {
+    const match = AZ_COMPONENT_PATTERN.exec(name)
+    if (match) regions.add(match[1])
+  }
+  return regions
+}
+
+/**
+ * True when an incident affects one of our regions, or when it names no
+ * region-scoped components (a global incident).
+ */
+export function isIncidentRelevant(componentNames: string[], ourRegions: string[]): boolean {
+  const regions = componentRegions(componentNames)
+  if (regions.size === 0) return true
+  return ourRegions.some((region) => regions.has(region))
+}
+
 interface StatuspageStatusResponse {
   status?: { indicator?: unknown }
 }
 
 interface StatuspageComponentsResponse {
   components?: Array<{ name?: unknown; status?: unknown }>
+}
+
+interface StatuspageIncidentsResponse {
+  incidents?: Array<{ components?: Array<{ name?: unknown }> }>
 }
 
 async function fetchStatuspage<T>(url: string): Promise<T | null> {
@@ -147,6 +187,44 @@ async function fetchStatuspage<T>(url: string): Promise<T | null> {
   }
 }
 
+/**
+ * Demotes components whose degradation is only caused by incidents in regions
+ * we don't operate in — the provider marks the product degraded globally while
+ * the incident itself names just the foreign AZs.
+ *
+ * Components degraded without any matching incident keep their status, so a
+ * missing or malformed incident feed errs on the side of showing it.
+ */
+export function applyRegionScoping(params: {
+  componentStatuses: Map<string, DependencyStatus>
+  incidents: StatuspageIncidentsResponse
+  regions: string[]
+}): void {
+  const { componentStatuses, incidents, regions } = params
+  const outsideOnly = new Map<string, boolean>()
+
+  for (const incident of incidents.incidents ?? []) {
+    const names = (incident.components ?? [])
+      .map((component) => (typeof component?.name === "string" ? component.name : null))
+      .filter((name): name is string => name !== null)
+
+    if (names.length === 0) continue
+
+    const relevant = isIncidentRelevant(names, regions)
+    for (const name of names) {
+      if (relevant) {
+        outsideOnly.set(name, false)
+      } else if (!outsideOnly.has(name)) {
+        outsideOnly.set(name, true)
+      }
+    }
+  }
+
+  for (const [name, onlyOutside] of outsideOnly) {
+    if (onlyOutside) componentStatuses.set(name, "operational")
+  }
+}
+
 export async function getDependencyHealth(dependency: Dependency): Promise<DependencyHealth> {
   const base = {
     id: dependency.id,
@@ -156,9 +234,15 @@ export async function getDependencyHealth(dependency: Dependency): Promise<Depen
     note: dependency.note
   }
 
-  const [statusBody, componentsBody] = await Promise.all([
+  const regions = dependency.regions ?? []
+  const wantIncidents = Boolean(dependency.incidentsUrl) && regions.length > 0
+
+  const [statusBody, componentsBody, incidentsBody] = await Promise.all([
     fetchStatuspage<StatuspageStatusResponse>(dependency.statusUrl),
-    fetchStatuspage<StatuspageComponentsResponse>(dependency.componentsUrl)
+    fetchStatuspage<StatuspageComponentsResponse>(dependency.componentsUrl),
+    wantIncidents
+      ? fetchStatuspage<StatuspageIncidentsResponse>(dependency.incidentsUrl as string)
+      : Promise.resolve(null)
   ])
 
   // Fall back to the provider-wide indicator when the component list is
@@ -183,6 +267,10 @@ export async function getDependencyHealth(dependency: Dependency): Promise<Depen
     }
   }
 
+  if (incidentsBody && regions.length > 0) {
+    applyRegionScoping({ componentStatuses, incidents: incidentsBody, regions })
+  }
+
   const capabilities: CapabilityHealth[] = dependency.capabilities.map((capability) => {
     const matched = capability.components
       .map((name) => componentStatuses.get(name))
@@ -193,6 +281,18 @@ export async function getDependencyHealth(dependency: Dependency): Promise<Depen
       status: matched.length > 0 ? worstStatus(matched) : "unknown"
     }
   })
+
+  // Our own zone only earns a row when it is not operational.
+  if (dependency.zone) {
+    const zoneStatuses = dependency.zone.components
+      .map((name) => componentStatuses.get(name))
+      .filter((status): status is DependencyStatus => status !== undefined)
+    const zoneStatus = zoneStatuses.length > 0 ? worstStatus(zoneStatuses) : "unknown"
+
+    if (zoneStatus !== "operational") {
+      capabilities.push({ label: dependency.zone.label, status: zoneStatus })
+    }
+  }
 
   return {
     ...base,
