@@ -149,16 +149,6 @@ export function componentRegions(componentNames: string[]): Set<string> {
   return regions
 }
 
-/**
- * True when an incident affects one of our regions, or when it names no
- * region-scoped components (a global incident).
- */
-export function isIncidentRelevant(componentNames: string[], ourRegions: string[]): boolean {
-  const regions = componentRegions(componentNames)
-  if (regions.size === 0) return true
-  return ourRegions.some((region) => regions.has(region))
-}
-
 interface StatuspageStatusResponse {
   status?: { indicator?: unknown }
 }
@@ -188,12 +178,54 @@ async function fetchStatuspage<T>(url: string): Promise<T | null> {
 }
 
 /**
+ * True when an incident affects one of our regions.
+ *
+ * Regions are derived only from the incident's *non-operational* AZ components:
+ * an AZ that is already operational (e.g. recovered while the incident is still
+ * under monitoring) does not count against us, and neither do foreign AZs. An
+ * incident with no AZ components at all is global and always counts.
+ */
+export function isIncidentAffectingRegions(params: {
+  componentNames: string[]
+  componentStatuses: Map<string, DependencyStatus>
+  regions: string[]
+}): boolean {
+  const { componentNames, componentStatuses, regions } = params
+  const azNames = componentNames.filter((name) => AZ_COMPONENT_PATTERN.test(name))
+  if (azNames.length === 0) return true
+
+  const affectedRegions = componentRegions(
+    azNames.filter((name) => componentStatuses.get(name) !== "operational")
+  )
+  return regions.some((region) => affectedRegions.has(region))
+}
+
+/** Component names of an incident entry, ignoring malformed shapes. */
+function incidentComponentNames(incident: unknown): string[] {
+  if (incident === null || typeof incident !== "object") return []
+
+  const components = (incident as { components?: unknown }).components
+  if (!Array.isArray(components)) return []
+
+  return components
+    .map((component) =>
+      component !== null &&
+      typeof component === "object" &&
+      typeof (component as { name?: unknown }).name === "string"
+        ? (component as { name: string }).name
+        : null
+    )
+    .filter((name): name is string => name !== null)
+}
+
+/**
  * Demotes components whose degradation is only caused by incidents in regions
  * we don't operate in — the provider marks the product degraded globally while
  * the incident itself names just the foreign AZs.
  *
- * Components degraded without any matching incident keep their status, so a
- * missing or malformed incident feed errs on the side of showing it.
+ * Malformed incident payloads (null entries, non-array components) are ignored,
+ * and components degraded without any matching incident keep their status, so a
+ * missing or broken incident feed errs on the side of showing it.
  */
 export function applyRegionScoping(params: {
   componentStatuses: Map<string, DependencyStatus>
@@ -202,15 +234,17 @@ export function applyRegionScoping(params: {
 }): void {
   const { componentStatuses, incidents, regions } = params
   const outsideOnly = new Map<string, boolean>()
+  const incidentList: unknown[] = Array.isArray(incidents.incidents) ? incidents.incidents : []
 
-  for (const incident of incidents.incidents ?? []) {
-    const names = (incident.components ?? [])
-      .map((component) => (typeof component?.name === "string" ? component.name : null))
-      .filter((name): name is string => name !== null)
-
+  for (const incident of incidentList) {
+    const names = incidentComponentNames(incident)
     if (names.length === 0) continue
 
-    const relevant = isIncidentRelevant(names, regions)
+    const relevant = isIncidentAffectingRegions({
+      componentNames: names,
+      componentStatuses,
+      regions
+    })
     for (const name of names) {
       if (relevant) {
         outsideOnly.set(name, false)
