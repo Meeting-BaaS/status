@@ -1,4 +1,4 @@
-import { type StatusLevel, getStatusFeed } from "@/lib/status"
+import { type StatusFeed, type StatusLevel, getStatusFeed } from "@/lib/status"
 import { cn } from "@/lib/utils"
 
 const LEVEL_STYLES: Record<
@@ -47,6 +47,36 @@ function formatDate(iso: string): string {
   return `${DATE_FORMATTER.format(new Date(iso))} UTC`
 }
 
+const DAY_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC"
+})
+
+function formatDay(date: string): string {
+  return DAY_FORMATTER.format(new Date(`${date}T00:00:00Z`))
+}
+
+function HistoryCalendar({ days }: { days: StatusFeed["history"] }) {
+  if (days.length === 0) return null
+
+  return (
+    <div>
+      <p className="mb-2 text-muted-foreground text-xs">Last {days.length} days</p>
+      <div className="flex gap-1">
+        {days.map((day) => (
+          <div
+            key={day.date}
+            title={`${formatDay(day.date)} — ${LEVEL_STYLES[day.status].headline}`}
+            className={cn("h-6 flex-1 rounded-sm", LEVEL_STYLES[day.status].dot)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function LevelBadge({ level, className }: { level: StatusLevel; className?: string }) {
   const style = LEVEL_STYLES[level]
 
@@ -75,6 +105,8 @@ export async function StatusOverview() {
           ) : null}
         </div>
       </div>
+
+      <HistoryCalendar days={feed.history} />
 
       {feed.updates.length > 0 ? (
         <section>
