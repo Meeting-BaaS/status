@@ -65,13 +65,22 @@ function HistoryCalendar({ days }: { days: StatusFeed["history"] }) {
     <div>
       <p className="mb-2 text-muted-foreground text-xs">Last {days.length} days</p>
       <div className="flex gap-1">
-        {days.map((day) => (
-          <div
-            key={day.date}
-            title={`${formatDay(day.date)} — ${LEVEL_STYLES[day.status].headline}`}
-            className={cn("h-6 flex-1 rounded-sm", LEVEL_STYLES[day.status].dot)}
-          />
-        ))}
+        {days.map((day) => {
+          const label = `${formatDay(day.date)} — ${LEVEL_STYLES[day.status].headline}`
+
+          return (
+            <button
+              key={day.date}
+              type="button"
+              aria-label={label}
+              title={label}
+              className={cn(
+                "h-6 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                LEVEL_STYLES[day.status].dot
+              )}
+            />
+          )
+        })}
       </div>
     </div>
   )

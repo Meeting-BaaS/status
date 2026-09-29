@@ -58,7 +58,11 @@ function isIsoDate(value: unknown): value is string {
 }
 
 function isUtcDay(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  // Round-trip so impossible dates ("2026-13-01") are rejected instead of
+  // reaching Intl.DateTimeFormat, which throws on Invalid Date.
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
 /**
@@ -84,6 +88,12 @@ export async function getStatusFeed(): Promise<StatusFeed> {
       updated_at?: unknown
       updates?: unknown
       history?: unknown
+    }
+
+    // An unrecognised overall status must not render as "All Systems
+    // Operational" — fall back to the unavailable state instead.
+    if (!isStatusLevel(body.status)) {
+      return UNAVAILABLE_FEED
     }
 
     const updates = Array.isArray(body.updates)
@@ -123,7 +133,7 @@ export async function getStatusFeed(): Promise<StatusFeed> {
       : []
 
     return {
-      status: isStatusLevel(body.status) ? body.status : "operational",
+      status: body.status,
       updatedAt: isIsoDate(body.updated_at) ? body.updated_at : null,
       updates,
       history
