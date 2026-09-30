@@ -10,6 +10,9 @@ export interface StatusUpdateEntry {
   status: StatusLevel
   title: string
   body: string
+  /** When the incident/status change took effect (may be backdated). */
+  effectiveAt: string
+  /** When the update was actually published. */
   createdAt: string
 }
 
@@ -115,6 +118,9 @@ export async function getStatusFeed(): Promise<StatusFeed> {
             status: entry.status as StatusLevel,
             title: entry.title as string,
             body: entry.body as string,
+            effectiveAt: isIsoDate(entry.effective_at)
+              ? entry.effective_at
+              : (entry.created_at as string),
             createdAt: entry.created_at as string
           }))
       : []

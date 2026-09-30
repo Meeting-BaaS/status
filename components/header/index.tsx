@@ -1,21 +1,21 @@
-import { UserAvatar } from "@/components/header/user-avatar"
-import Image from "next/image"
 import { ThemeToggle } from "@/components/header/theme-toggle"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { UserAvatar } from "@/components/header/user-avatar"
 import { GitHubLogo } from "@/components/icons/github"
+import { Button } from "@/components/ui/button"
+import { getSignInUrl } from "@/lib/auth/auth-app-url"
 import type { User } from "@/lib/auth/types"
-import { GITHUB_REPO_URL } from "@/lib/external-urls"
-import { getAuthAppUrl, getSignInUrl } from "@/lib/auth/auth-app-url"
+import { DASHBOARD_STATUS_UPDATES_URL, DASHBOARD_URL, GITHUB_REPO_URL } from "@/lib/external-urls"
+import Image from "next/image"
+import Link from "next/link"
 
 export default function Header({ user }: { user?: User }) {
   const onSignIn = () => {
-    window.location.href = getSignInUrl()
+    window.location.href = getSignInUrl(DASHBOARD_STATUS_UPDATES_URL)
   }
   return (
     <header className="sticky top-0 z-40 mx-auto box-content w-full max-w-container border-b bg-background/15 backdrop-blur-md lg:top-2 lg:mt-2 lg:w-[calc(100%-4rem)] lg:rounded-2xl lg:border">
       <nav className="flex h-12 w-full flex-row items-center justify-between px-4">
-        <Link href={`${getAuthAppUrl()}/home`} target="_blank" rel="noopener noreferrer">
+        <Link href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer">
           <div className="flex items-center gap-2">
             <Image
               src="/logo.svg"
