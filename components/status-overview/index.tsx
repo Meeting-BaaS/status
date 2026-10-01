@@ -109,7 +109,7 @@ export async function StatusOverview() {
           <p className={cn("font-semibold", style.text)}>{style.headline}</p>
           {feed.updatedAt ? (
             <p className="text-muted-foreground text-xs">
-              Last update {formatDate(feed.updatedAt)}
+              Status effective since {formatDate(feed.updatedAt)}
             </p>
           ) : null}
         </div>
@@ -130,7 +130,13 @@ export async function StatusOverview() {
                   <p className="font-medium text-sm">{update.title}</p>
                   <LevelBadge level={update.status} />
                 </div>
-                <p className="mt-1 text-muted-foreground text-xs">{formatDate(update.createdAt)}</p>
+                <p className="mt-1 text-muted-foreground text-xs">
+                  {formatDate(update.effectiveAt)}
+                  {new Date(update.createdAt).getTime() - new Date(update.effectiveAt).getTime() >
+                  60_000
+                    ? ` · Published ${formatDate(update.createdAt)}`
+                    : ""}
+                </p>
                 <p className="mt-2 whitespace-pre-line text-sm">{update.body}</p>
               </li>
             ))}
