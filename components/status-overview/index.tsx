@@ -131,9 +131,11 @@ export async function StatusOverview() {
                   <LevelBadge level={update.status} />
                 </div>
                 <p className="mt-1 text-muted-foreground text-xs">
-                  {new Date(update.effectiveAt).getTime() > Date.now()
-                    ? `Scheduled for ${formatDate(update.effectiveAt)}`
-                    : `Effective ${formatDate(update.effectiveAt)}`}
+                  {update.resolvedAt
+                    ? `Resolved · ${formatDate(update.effectiveAt)} → ${formatDate(update.resolvedAt)}`
+                    : new Date(update.effectiveAt).getTime() > Date.now()
+                      ? `Scheduled for ${formatDate(update.effectiveAt)}`
+                      : `Effective ${formatDate(update.effectiveAt)}`}
                   {Math.abs(
                     new Date(update.createdAt).getTime() - new Date(update.effectiveAt).getTime()
                   ) > 60_000
