@@ -20,11 +20,11 @@ export function getAuthAppUrl(): string {
  * @throws {Error} If the authentication app URL is not configured
  * @returns {string} The sign in URL
  */
-export function getSignInUrl(): string {
+export function getSignInUrl(redirectTo?: string): string {
   const authAppUrl = getAuthAppUrl()
 
-  const current = encodeURIComponent(window.location.href)
-  const signInUrl = `${authAppUrl}/sign-in?redirectTo=${current}`
+  const destination = encodeURIComponent(redirectTo ?? window.location.href)
+  const signInUrl = `${authAppUrl}/sign-in?redirectTo=${destination}`
 
   return signInUrl
 }

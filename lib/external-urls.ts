@@ -16,6 +16,10 @@ const createUrl = (subdomain: string) => {
 // Chat App
 export const AI_CHAT_URL = createUrl("chat")
 
+// v2 dashboard
+export const DASHBOARD_URL = createUrl("dashboard")
+export const DASHBOARD_STATUS_UPDATES_URL = `${DASHBOARD_URL}/admin/status-updates`
+
 // Main app URLs
 export const MEETING_BAAS_HOMEPAGE_URL = "https://meetingbaas.com"
 export const TERMS_AND_CONDITIONS_URL = `${MEETING_BAAS_HOMEPAGE_URL}/terms-and-conditions`
