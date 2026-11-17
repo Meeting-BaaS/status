@@ -124,6 +124,72 @@ export function getIncidentStatus(incident: StatusIncident): StatusLevel {
   return latest.status
 }
 
+export type IncidentPhase = "scheduled" | "ongoing" | "resolved" | "informational"
+
+/**
+ * Where an incident stands at `now`: resolved once its resolution time has
+ * passed, scheduled while its start is in the future, informational when it is
+ * operational now with no resolution time at all, ongoing otherwise.
+ */
+export function getIncidentPhase(incident: StatusIncident, now: number): IncidentPhase {
+  const { root } = incident
+  if (root.resolvedAt && Date.parse(root.resolvedAt) <= now) return "resolved"
+  if (Date.parse(root.effectiveAt) > now) return "scheduled"
+  // A follow-up dated in the future has not taken effect yet.
+  const followUps = incident.followUps.filter((followUp) => Date.parse(followUp.effectiveAt) <= now)
+  const status = getIncidentStatus({ root, followUps })
+  return status === "operational" && !root.resolvedAt ? "informational" : "ongoing"
+}
+
+/** When an incident last changed: its resolution time, else its latest entry. */
+function getLastChangeAt(incident: StatusIncident, now: number): number {
+  const { root } = incident
+  if (root.resolvedAt && Date.parse(root.resolvedAt) <= now) return Date.parse(root.resolvedAt)
+  return Math.max(
+    Date.parse(root.effectiveAt),
+    ...incident.followUps.map((followUp) => Date.parse(followUp.effectiveAt))
+  )
+}
+
+/**
+ * Splits incidents into active (ongoing first, then scheduled by soonest start)
+ * and resolved (resolved and informational, most recent change first).
+ */
+export function partitionIncidents(
+  incidents: StatusIncident[],
+  now: number
+): { active: StatusIncident[]; resolved: StatusIncident[] } {
+  const ongoing: StatusIncident[] = []
+  const scheduled: StatusIncident[] = []
+  const resolved: StatusIncident[] = []
+
+  for (const incident of incidents) {
+    const phase = getIncidentPhase(incident, now)
+    if (phase === "ongoing") ongoing.push(incident)
+    else if (phase === "scheduled") scheduled.push(incident)
+    else resolved.push(incident)
+  }
+
+  scheduled.sort((a, b) => Date.parse(a.root.effectiveAt) - Date.parse(b.root.effectiveAt))
+  resolved.sort((a, b) => getLastChangeAt(b, now) - getLastChangeAt(a, now))
+
+  return { active: [...ongoing, ...scheduled], resolved }
+}
+
+/** Formats a duration as "45m", "2h 14m" or "3d 4h" (rounded down to the minute). */
+export function formatDuration(milliseconds: number): string {
+  const totalMinutes = Math.floor(Math.max(0, milliseconds) / 60_000)
+  if (totalMinutes < 1) return "less than a minute"
+
+  const days = Math.floor(totalMinutes / 1440)
+  const hours = Math.floor((totalMinutes % 1440) / 60)
+  const minutes = totalMinutes % 60
+
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`
+  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+  return `${minutes}m`
+}
+
 /**
  * Reads the manually published status feed from the v2 api-server.
  * Falls back to an "unavailable" feed (null status) on any failure so the page
