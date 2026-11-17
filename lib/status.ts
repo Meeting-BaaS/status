@@ -7,6 +7,8 @@ export type StatusLevel =
 
 export interface StatusUpdateEntry {
   id: number
+  /** Id of the incident this entry follows up on, null for the incident itself. */
+  parentId: number | null
   status: StatusLevel
   title: string
   body: string
@@ -16,6 +18,12 @@ export interface StatusUpdateEntry {
   resolvedAt: string | null
   /** When the update was actually published. */
   createdAt: string
+}
+
+export interface StatusIncident {
+  root: StatusUpdateEntry
+  /** Follow-ups of the root, oldest first. */
+  followUps: StatusUpdateEntry[]
 }
 
 export interface StatusDay {
@@ -71,6 +79,52 @@ function isUtcDay(value: unknown): value is string {
 }
 
 /**
+ * Groups the flat feed into incidents, in the feed's order (by root position).
+ * A follow-up whose root is not in the feed becomes its own incident.
+ */
+export function groupIncidents(entries: StatusUpdateEntry[]): StatusIncident[] {
+  const rootIds = new Set(
+    entries.filter((entry) => entry.parentId === null).map((entry) => entry.id)
+  )
+  const byRootId = new Map<number, StatusIncident>()
+  const incidents: StatusIncident[] = []
+
+  for (const entry of entries) {
+    if (entry.parentId !== null && rootIds.has(entry.parentId)) continue
+    const incident: StatusIncident = { root: entry, followUps: [] }
+    incidents.push(incident)
+    if (entry.parentId === null) byRootId.set(entry.id, incident)
+  }
+
+  for (const entry of entries) {
+    if (entry.parentId === null) continue
+    byRootId.get(entry.parentId)?.followUps.push(entry)
+  }
+
+  for (const incident of incidents) {
+    incident.followUps.sort(
+      (a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt) || a.id - b.id
+    )
+  }
+
+  return incidents
+}
+
+/**
+ * Current state of an incident: the root's status once resolved, otherwise the
+ * status of its latest entry by effective date.
+ */
+export function getIncidentStatus(incident: StatusIncident): StatusLevel {
+  if (incident.root.resolvedAt) return incident.root.status
+
+  let latest = incident.root
+  for (const followUp of incident.followUps) {
+    if (Date.parse(followUp.effectiveAt) >= Date.parse(latest.effectiveAt)) latest = followUp
+  }
+  return latest.status
+}
+
+/**
  * Reads the manually published status feed from the v2 api-server.
  * Falls back to an "unavailable" feed (null status) on any failure so the page
  * renders instead of rejecting.
@@ -117,6 +171,7 @@ export async function getStatusFeed(): Promise<StatusFeed> {
           .slice(0, FEED_LIMIT)
           .map((entry) => ({
             id: entry.id as number,
+            parentId: typeof entry.parent_id === "number" ? entry.parent_id : null,
             status: entry.status as StatusLevel,
             title: entry.title as string,
             body: entry.body as string,

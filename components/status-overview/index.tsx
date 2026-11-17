@@ -1,4 +1,10 @@
-import { type StatusFeed, type StatusLevel, getStatusFeed } from "@/lib/status"
+import {
+  type StatusFeed,
+  type StatusLevel,
+  getIncidentStatus,
+  getStatusFeed,
+  groupIncidents
+} from "@/lib/status"
 import { cn } from "@/lib/utils"
 
 const LEVEL_STYLES: Record<
@@ -121,30 +127,49 @@ export async function StatusOverview() {
         <section>
           <h2 className="mb-2 font-semibold text-sm">Updates</h2>
           <ul className="space-y-3">
-            {feed.updates.map((update) => (
-              <li
-                key={update.id}
-                className="rounded-lg border border-border/70 bg-gradient-to-r from-muted/30 to-background p-4 shadow-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-sm">{update.title}</p>
-                  <LevelBadge level={update.status} />
-                </div>
-                <p className="mt-1 text-muted-foreground text-xs">
-                  {update.resolvedAt
-                    ? `Resolved · ${formatDate(update.effectiveAt)} → ${formatDate(update.resolvedAt)}`
-                    : new Date(update.effectiveAt).getTime() > Date.now()
-                      ? `Scheduled for ${formatDate(update.effectiveAt)}`
-                      : `Effective ${formatDate(update.effectiveAt)}`}
-                  {Math.abs(
-                    new Date(update.createdAt).getTime() - new Date(update.effectiveAt).getTime()
-                  ) > 60_000
-                    ? ` · Published ${formatDate(update.createdAt)}`
-                    : ""}
-                </p>
-                <p className="mt-2 whitespace-pre-line text-sm">{update.body}</p>
-              </li>
-            ))}
+            {groupIncidents(feed.updates).map((incident) => {
+              const update = incident.root
+
+              return (
+                <li
+                  key={update.id}
+                  className="rounded-lg border border-border/70 bg-gradient-to-r from-muted/30 to-background p-4 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium text-sm">{update.title}</p>
+                    <LevelBadge level={getIncidentStatus(incident)} />
+                  </div>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {update.resolvedAt
+                      ? `Resolved · ${formatDate(update.effectiveAt)} → ${formatDate(update.resolvedAt)}`
+                      : new Date(update.effectiveAt).getTime() > Date.now()
+                        ? `Scheduled for ${formatDate(update.effectiveAt)}`
+                        : `Effective ${formatDate(update.effectiveAt)}`}
+                    {Math.abs(
+                      new Date(update.createdAt).getTime() - new Date(update.effectiveAt).getTime()
+                    ) > 60_000
+                      ? ` · Published ${formatDate(update.createdAt)}`
+                      : ""}
+                  </p>
+                  <p className="mt-2 whitespace-pre-line text-sm">{update.body}</p>
+                  {incident.followUps.length > 0 ? (
+                    <ol className="mt-3 space-y-3 border-border/70 border-l pl-4">
+                      {incident.followUps.map((followUp) => (
+                        <li key={followUp.id}>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <p className="text-muted-foreground text-xs">
+                              {formatDate(followUp.effectiveAt)}
+                            </p>
+                            <LevelBadge level={followUp.status} />
+                          </div>
+                          <p className="mt-1 whitespace-pre-line text-sm">{followUp.body}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </li>
+              )
+            })}
           </ul>
         </section>
       ) : null}
