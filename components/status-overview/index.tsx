@@ -308,7 +308,8 @@ function IncidentCard({ incident, now }: { incident: StatusIncident; now: number
   )
 }
 
-export async function StatusOverview() {
+/** `children` (the service health cards) sit between the overall status and the incidents. */
+export async function StatusOverview({ children }: { children?: ReactNode }) {
   const feed = await getStatusFeed()
   const style = LEVEL_STYLES[feed.status ?? "unavailable"]
   const now = Date.now()
@@ -329,6 +330,8 @@ export async function StatusOverview() {
       </div>
 
       <HistoryCalendar days={feed.history} />
+
+      {children}
 
       {feed.status !== null ? (
         <>
