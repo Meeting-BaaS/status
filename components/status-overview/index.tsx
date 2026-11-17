@@ -162,6 +162,7 @@ interface TimelineEntry {
   at: string
   dot: string
   text: string
+  title?: string
   body?: string
 }
 
@@ -189,6 +190,8 @@ function buildTimeline(incident: StatusIncident, isResolved: boolean): TimelineE
       at: followUp.effectiveAt,
       dot: style.dot,
       text: style.text,
+      // A follow-up inherits the incident's title unless it was given its own.
+      title: followUp.title !== root.title ? followUp.title : undefined,
       body: followUp.body
     })
   }
@@ -231,6 +234,11 @@ function Timeline({ entries, quiet }: { entries: TimelineEntry[]; quiet: boolean
               <DateTime iso={entry.at} />
             </span>
           </p>
+          {entry.title ? (
+            <p className={cn("mt-1 font-medium text-sm", quiet && "text-muted-foreground")}>
+              {entry.title}
+            </p>
+          ) : null}
           {entry.body ? (
             <p className={cn("mt-1 whitespace-pre-line text-sm", quiet && "text-muted-foreground")}>
               {entry.body}
@@ -247,7 +255,7 @@ function IncidentCard({ incident, now }: { incident: StatusIncident; now: number
   const phase = getIncidentPhase(incident, now)
   const isResolved = phase === "resolved"
   const quiet = isResolved || phase === "informational"
-  const levelStyle = LEVEL_STYLES[getIncidentStatus(incident)]
+  const levelStyle = LEVEL_STYLES[getIncidentStatus(incident, now)]
 
   const badge = isResolved
     ? { label: "Resolved", ...BADGE_TONES.resolved }

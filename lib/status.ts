@@ -111,15 +111,18 @@ export function groupIncidents(entries: StatusUpdateEntry[]): StatusIncident[] {
 }
 
 /**
- * Current state of an incident: the root's status once resolved, otherwise the
- * status of its latest entry by effective date.
+ * State of an incident at `now`: the root's status once its resolution time has
+ * passed, otherwise the status of the latest entry already in effect.
  */
-export function getIncidentStatus(incident: StatusIncident): StatusLevel {
-  if (incident.root.resolvedAt) return incident.root.status
+export function getIncidentStatus(incident: StatusIncident, now: number): StatusLevel {
+  const { root } = incident
+  if (root.resolvedAt && Date.parse(root.resolvedAt) <= now) return root.status
 
-  let latest = incident.root
+  let latest = root
   for (const followUp of incident.followUps) {
-    if (Date.parse(followUp.effectiveAt) >= Date.parse(latest.effectiveAt)) latest = followUp
+    const at = Date.parse(followUp.effectiveAt)
+    // A follow-up dated in the future has not taken effect yet.
+    if (at <= now && at >= Date.parse(latest.effectiveAt)) latest = followUp
   }
   return latest.status
 }
@@ -135,9 +138,7 @@ export function getIncidentPhase(incident: StatusIncident, now: number): Inciden
   const { root } = incident
   if (root.resolvedAt && Date.parse(root.resolvedAt) <= now) return "resolved"
   if (Date.parse(root.effectiveAt) > now) return "scheduled"
-  // A follow-up dated in the future has not taken effect yet.
-  const followUps = incident.followUps.filter((followUp) => Date.parse(followUp.effectiveAt) <= now)
-  const status = getIncidentStatus({ root, followUps })
+  const status = getIncidentStatus(incident, now)
   return status === "operational" && !root.resolvedAt ? "informational" : "ongoing"
 }
 
