@@ -1,37 +1,54 @@
-import { type StatusFeed, type StatusLevel, getStatusFeed } from "@/lib/status"
+import {
+  type StatusFeed,
+  type StatusIncident,
+  type StatusLevel,
+  formatDuration,
+  getIncidentPhase,
+  getIncidentStatus,
+  getStatusFeed,
+  groupIncidents,
+  partitionIncidents
+} from "@/lib/status"
 import { cn } from "@/lib/utils"
+import { Fragment, type ReactNode } from "react"
 
 const LEVEL_STYLES: Record<
   StatusLevel | "unavailable",
-  { headline: string; dot: string; text: string }
+  { headline: string; label: string; dot: string; text: string }
 > = {
   operational: {
     headline: "All Systems Operational",
+    label: "Operational",
     dot: "bg-emerald-500",
     text: "text-emerald-600 dark:text-emerald-400"
   },
   maintenance: {
     headline: "Scheduled Maintenance",
+    label: "Maintenance",
     dot: "bg-sky-500",
     text: "text-sky-600 dark:text-sky-400"
   },
   degraded: {
     headline: "Degraded Performance",
+    label: "Degraded Performance",
     dot: "bg-amber-500",
     text: "text-amber-600 dark:text-amber-400"
   },
   partial_outage: {
     headline: "Partial Outage",
+    label: "Partial Outage",
     dot: "bg-orange-500",
     text: "text-orange-600 dark:text-orange-400"
   },
   major_outage: {
     headline: "Major Outage",
+    label: "Major Outage",
     dot: "bg-red-500",
     text: "text-red-600 dark:text-red-400"
   },
   unavailable: {
     headline: "Status Unavailable",
+    label: "Unavailable",
     dot: "bg-muted-foreground",
     text: "text-muted-foreground"
   }
@@ -86,20 +103,225 @@ function HistoryCalendar({ days }: { days: StatusFeed["history"] }) {
   )
 }
 
-function LevelBadge({ level, className }: { level: StatusLevel; className?: string }) {
-  const style = LEVEL_STYLES[level]
+const BADGE_TONES = {
+  resolved: {
+    dot: "bg-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400"
+  },
+  scheduled: {
+    dot: "bg-sky-500",
+    text: "text-sky-600 dark:text-sky-400"
+  }
+}
 
+function StateBadge({ label, dot, text }: { label: string; dot: string; text: string }) {
   return (
-    <span className={cn("flex items-center gap-2 font-medium text-xs", style.text, className)}>
-      <span className={cn("size-2 shrink-0 rounded-full", style.dot)} />
-      {style.headline}
+    <span
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full border border-current/25 px-2.5 py-0.5 font-medium text-xs",
+        text
+      )}
+    >
+      <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", dot)} />
+      {label}
     </span>
   )
 }
 
-export async function StatusOverview() {
+function DateTime({ iso }: { iso: string }) {
+  return <time dateTime={iso}>{formatDate(iso)}</time>
+}
+
+function DateRange({ from, to }: { from: string; to: string }) {
+  return (
+    <span>
+      <DateTime iso={from} />
+      <span aria-hidden="true"> → </span>
+      <span className="sr-only"> to </span>
+      <DateTime iso={to} />
+    </span>
+  )
+}
+
+function MetaRow({ items }: { items: ReactNode[] }) {
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-muted-foreground text-xs">
+      {items.map((item, index) => (
+        <Fragment key={index}>
+          {index > 0 ? <span aria-hidden="true">·</span> : null}
+          <span>{item}</span>
+        </Fragment>
+      ))}
+    </p>
+  )
+}
+
+interface TimelineEntry {
+  key: string
+  label: string
+  at: string
+  dot: string
+  text: string
+  title?: string
+  body?: string
+}
+
+/** The incident's story, newest first: resolution, follow-ups, initial report. */
+function buildTimeline(incident: StatusIncident, isResolved: boolean): TimelineEntry[] {
+  const { root, followUps } = incident
+  if (followUps.length === 0 && !isResolved) return []
+
+  const entries: TimelineEntry[] = []
+
+  if (isResolved && root.resolvedAt) {
+    entries.push({
+      key: "resolved",
+      label: "Resolved",
+      at: root.resolvedAt,
+      ...BADGE_TONES.resolved
+    })
+  }
+
+  for (const followUp of [...followUps].reverse()) {
+    const style = LEVEL_STYLES[followUp.status]
+    entries.push({
+      key: `follow-up-${followUp.id}`,
+      label: style.label,
+      at: followUp.effectiveAt,
+      dot: style.dot,
+      text: style.text,
+      // A follow-up inherits the incident's title unless it was given its own.
+      title: followUp.title !== root.title ? followUp.title : undefined,
+      body: followUp.body
+    })
+  }
+
+  // The report's own message is the card body, so it is not repeated here.
+  entries.push({
+    key: "reported",
+    label: `Reported · ${LEVEL_STYLES[root.status].label}`,
+    at: root.effectiveAt,
+    dot: "bg-muted-foreground",
+    text: "text-muted-foreground"
+  })
+
+  // Entries can be backdated either way, so order by time; the stable sort keeps "Resolved" first and the report last on ties.
+  entries.sort((first, second) => Date.parse(second.at) - Date.parse(first.at))
+
+  return entries
+}
+
+function Timeline({ entries, quiet }: { entries: TimelineEntry[]; quiet: boolean }) {
+  if (entries.length === 0) return null
+
+  return (
+    <ol className="mt-4 border-border/70 border-t pt-4">
+      {entries.map((entry, index) => (
+        <li key={entry.key} className="relative pb-4 pl-5 last:pb-0">
+          {index < entries.length - 1 ? (
+            <span
+              aria-hidden="true"
+              className="absolute top-3 bottom-0 left-[3px] w-px bg-border"
+            />
+          ) : null}
+          <span
+            aria-hidden="true"
+            className={cn("absolute top-1 left-0 size-[7px] rounded-full", entry.dot)}
+          />
+          <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+            <span className={cn("font-medium", entry.text)}>{entry.label}</span>
+            <span className="text-muted-foreground">
+              <DateTime iso={entry.at} />
+            </span>
+          </p>
+          {entry.title ? (
+            <p className={cn("mt-1 font-medium text-sm", quiet && "text-muted-foreground")}>
+              {entry.title}
+            </p>
+          ) : null}
+          {entry.body ? (
+            <p className={cn("mt-1 whitespace-pre-line text-sm", quiet && "text-muted-foreground")}>
+              {entry.body}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function IncidentCard({ incident, now }: { incident: StatusIncident; now: number }) {
+  const { root } = incident
+  const phase = getIncidentPhase(incident, now)
+  const isResolved = phase === "resolved"
+  const quiet = isResolved || phase === "informational"
+  const levelStyle = LEVEL_STYLES[getIncidentStatus(incident, now)]
+
+  const badge = isResolved
+    ? { label: "Resolved", ...BADGE_TONES.resolved }
+    : phase === "scheduled"
+      ? { label: "Scheduled", ...BADGE_TONES.scheduled }
+      : levelStyle
+
+  const meta: ReactNode[] = []
+  if (isResolved && root.resolvedAt) {
+    meta.push(<DateRange key="range" from={root.effectiveAt} to={root.resolvedAt} />)
+    const duration = Date.parse(root.resolvedAt) - Date.parse(root.effectiveAt)
+    if (duration > 0) meta.push(`Lasted ${formatDuration(duration)}`)
+  } else if (phase === "scheduled") {
+    meta.push(
+      <>
+        Scheduled for{" "}
+        {root.resolvedAt ? (
+          <DateRange from={root.effectiveAt} to={root.resolvedAt} />
+        ) : (
+          <DateTime iso={root.effectiveAt} />
+        )}
+      </>
+    )
+  } else {
+    meta.push(
+      <>
+        {phase === "informational" ? "Posted" : "Started"} <DateTime iso={root.effectiveAt} />
+      </>
+    )
+    if (root.resolvedAt) {
+      meta.push(
+        <>
+          Expected end <DateTime iso={root.resolvedAt} />
+        </>
+      )
+    }
+  }
+
+  return (
+    <li
+      className={cn(
+        "rounded-lg border p-4",
+        quiet
+          ? "border-border/50"
+          : "border-border/70 bg-gradient-to-r from-muted/30 to-background shadow-sm"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-medium text-sm">{root.title}</h3>
+        <StateBadge label={badge.label} dot={badge.dot} text={badge.text} />
+      </div>
+      <MetaRow items={meta} />
+      <p className={cn("mt-3 whitespace-pre-line text-sm", quiet && "text-muted-foreground")}>
+        {root.body}
+      </p>
+      <Timeline entries={buildTimeline(incident, isResolved)} quiet={quiet} />
+    </li>
+  )
+}
+
+/** `children` (the service health cards) sit between the overall status and the incidents. */
+export async function StatusOverview({ children }: { children?: ReactNode }) {
   const feed = await getStatusFeed()
   const style = LEVEL_STYLES[feed.status ?? "unavailable"]
+  const now = Date.now()
+  const { active, resolved } = partitionIncidents(groupIncidents(feed.updates), now)
 
   return (
     <div className="mb-6 space-y-4">
@@ -117,36 +339,34 @@ export async function StatusOverview() {
 
       <HistoryCalendar days={feed.history} />
 
-      {feed.updates.length > 0 ? (
-        <section>
-          <h2 className="mb-2 font-semibold text-sm">Updates</h2>
-          <ul className="space-y-3">
-            {feed.updates.map((update) => (
-              <li
-                key={update.id}
-                className="rounded-lg border border-border/70 bg-gradient-to-r from-muted/30 to-background p-4 shadow-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-sm">{update.title}</p>
-                  <LevelBadge level={update.status} />
-                </div>
-                <p className="mt-1 text-muted-foreground text-xs">
-                  {update.resolvedAt
-                    ? `Resolved · ${formatDate(update.effectiveAt)} → ${formatDate(update.resolvedAt)}`
-                    : new Date(update.effectiveAt).getTime() > Date.now()
-                      ? `Scheduled for ${formatDate(update.effectiveAt)}`
-                      : `Effective ${formatDate(update.effectiveAt)}`}
-                  {Math.abs(
-                    new Date(update.createdAt).getTime() - new Date(update.effectiveAt).getTime()
-                  ) > 60_000
-                    ? ` · Published ${formatDate(update.createdAt)}`
-                    : ""}
-                </p>
-                <p className="mt-2 whitespace-pre-line text-sm">{update.body}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {children}
+
+      {feed.status !== null ? (
+        <>
+          <section>
+            <h2 className="mb-2 font-semibold text-sm">Active incidents</h2>
+            {active.length > 0 ? (
+              <ul className="space-y-3">
+                {active.map((incident) => (
+                  <IncidentCard key={incident.root.id} incident={incident} now={now} />
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">No active incidents.</p>
+            )}
+          </section>
+
+          {resolved.length > 0 ? (
+            <section>
+              <h2 className="mb-2 font-semibold text-sm">Resolved incidents</h2>
+              <ul className="space-y-3">
+                {resolved.map((incident) => (
+                  <IncidentCard key={incident.root.id} incident={incident} now={now} />
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </>
       ) : null}
     </div>
   )
