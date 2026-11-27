@@ -86,7 +86,9 @@ function HistoryCalendar({
         {days.map((day) => {
           const label = `${formatDay(day.date)} — ${LEVEL_STYLES[day.status].headline}`
           const updateId = updateIdByDay.get(day.date)
-          const bar = <span className={cn("h-6 w-full rounded-sm", LEVEL_STYLES[day.status].dot)} />
+          const bar = (
+            <span className={cn("block h-6 w-full rounded-sm", LEVEL_STYLES[day.status].dot)} />
+          )
 
           return (
             <div key={day.date} className="group relative min-w-0 flex-1">
@@ -99,7 +101,9 @@ function HistoryCalendar({
                   {bar}
                 </a>
               ) : (
-                <div className="rounded-sm">{bar}</div>
+                <div role="img" aria-label={label} className="rounded-sm">
+                  {bar}
+                </div>
               )}
               <span
                 aria-hidden
