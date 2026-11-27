@@ -58,27 +58,56 @@ function formatDay(date: string): string {
   return DAY_FORMATTER.format(new Date(`${date}T00:00:00Z`))
 }
 
-function HistoryCalendar({ days }: { days: StatusFeed["history"] }) {
+function HistoryCalendar({
+  days,
+  updates
+}: {
+  days: StatusFeed["history"]
+  updates: StatusFeed["updates"]
+}) {
   if (days.length === 0) return null
 
+  // Day -> update shown below, so a click on a bar jumps to the message that
+  // describes the change. Latest update per day wins; prefer one whose status
+  // matches the day, since a same-day resolution would otherwise hide it.
+  const updateIdByDay = new Map<string, number>()
+  for (const day of days) {
+    const onThatDay = (update: StatusFeed["updates"][number]) =>
+      update.effectiveAt.slice(0, 10) === day.date
+    const match = updates.find((update) => onThatDay(update) && update.status === day.status)
+    const fallback = updates.find(onThatDay)
+    if (match ?? fallback) updateIdByDay.set(day.date, (match ?? fallback)!.id)
+  }
+
   return (
-    <div>
+    <div className="overflow-x-clip">
       <p className="mb-2 text-muted-foreground text-xs">Last {days.length} days</p>
       <div className="flex gap-1">
         {days.map((day) => {
           const label = `${formatDay(day.date)} — ${LEVEL_STYLES[day.status].headline}`
+          const updateId = updateIdByDay.get(day.date)
+          const bar = <span className={cn("h-6 w-full rounded-sm", LEVEL_STYLES[day.status].dot)} />
 
           return (
-            <button
-              key={day.date}
-              type="button"
-              aria-label={label}
-              title={label}
-              className={cn(
-                "h-6 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                LEVEL_STYLES[day.status].dot
+            <div key={day.date} className="group relative min-w-0 flex-1">
+              {updateId ? (
+                <a
+                  href={`#update-${updateId}`}
+                  aria-label={`${label} — jump to update`}
+                  className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {bar}
+                </a>
+              ) : (
+                <div className="rounded-sm">{bar}</div>
               )}
-            />
+              <span
+                aria-hidden
+                className="-top-7 -translate-x-1/2 pointer-events-none absolute left-1/2 z-10 text-nowrap rounded-md border border-border bg-popover px-2 py-0.5 text-muted-foreground text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+              >
+                {label}
+              </span>
+            </div>
           )
         })}
       </div>
@@ -115,7 +144,7 @@ export async function StatusOverview() {
         </div>
       </div>
 
-      <HistoryCalendar days={feed.history} />
+      <HistoryCalendar days={feed.history} updates={feed.updates} />
 
       {feed.updates.length > 0 ? (
         <section>
@@ -124,7 +153,8 @@ export async function StatusOverview() {
             {feed.updates.map((update) => (
               <li
                 key={update.id}
-                className="rounded-lg border border-border/70 bg-gradient-to-r from-muted/30 to-background p-4 shadow-sm"
+                id={`update-${update.id}`}
+                className="scroll-mt-20 rounded-lg border border-border/70 bg-gradient-to-r from-muted/30 to-background p-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium text-sm">{update.title}</p>

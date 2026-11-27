@@ -210,3 +210,8 @@
     @apply !text-muted-foreground;
   }
 }
+
+/* Status update jumped to from a history-calendar bar. */
+li:target {
+  box-shadow: 0 0 0 2px var(--ring);
+}
